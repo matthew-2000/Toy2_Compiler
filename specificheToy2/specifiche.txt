@@ -1,0 +1,200 @@
+Modifiche del 6 dicembre ore 18
+1. eliminato VarDecls
+2. aggiunto ENDVAR (eliminando così un conflitto)
+3. aggiunto COMMA in Consts
+4. distinto FunCall da ProcCall con aggiunta di ProcExprs per il passaggio per riferimento tramite il token REF ('@')
+5. corretto Exprs per permettere chiamata senza parametri
+Altri miglioramenti potrebbe essere fatti (soprattutto per eliminare i conflitti).
+
+Modifiche del 7 dic
+1. ridefiniti Funcall, ProcCall, ProcExprs ed Exprs
+
+
+SPECIFICHE SINTATTICHE E LESSICALI DEL LINGUAGGIO Toy2
+
+
+
+Program ::= Iter Procedure Iter
+Iter ::= VarDecl Iter
+      | Function Iter
+      | Procedure Iter
+      | /* empty */ 
+
+
+VarDecl ::= VAR Decls
+Decls ::= Ids COLON Type SEMI Decls
+	| Ids ASSIGN Consts SEMI Decls
+	| Ids COLON Type SEMI ENDVAR
+	| Ids ASSIGN Consts SEMI ENDVAR
+
+Ids ::= ID COMMA Ids
+        | ID
+
+Consts ::= Const COMMA Consts
+	| Const
+Const ::= REAL_CONST
+	| INTEGER_CONST
+	| STRING_CONST
+	| TRUE
+	| FALSE
+
+Type ::= REAL
+	| INTEGER
+	| STRING
+	| BOOLEAN
+
+Function  ::= FUNCTION ID LPAR FuncParams RPAR TYPERETURN Types COLON Body ENDFUNCTION
+
+FuncParams ::= ID COLON Type OtherFuncParams
+	    | /* empty */ 
+OtherFuncParams ::= COMMA ID COLON Type OtherFuncParams
+	    | /* empty */ 
+
+Types ::= Type COMMA Types
+	| Type
+
+Procedure ::= PROCEDURE ID LPAR ProcParams RPAR COLON Body ENDPROCEDURE
+
+ProcParams::= ProcParamId COLON Type OtherProcParams
+	   | /* empty */ 
+OtherProcParams ::= COMMA ProcParamId COLON Type OtherProcParams
+	   | /* empty */ 
+
+ProcParamId ::= ID
+	    | OUT ID
+
+Body ::= VarDecl Body
+	| Stat Body
+	| /* empty */ 
+
+Stat ::= Ids ASSIGN Exprs SEMI
+	 | ProcCall  SEMI
+	 | RETURN Exprs SEMI
+	 | WRITE IOArgs SEMI
+	 | WRITERETURN IOArgs SEMI
+	 | READ IOArgs SEMI
+	 | IfStat SEMI
+	 | WhileStat SEMI
+
+FunCall ::= ID LPAR Exprs RPAR           /* chiamata con almeno un parametro */
+         | ID LPAR RPAR                   /* chiamata con nessun parametro */
+
+ProcCall ::= ID LPAR ProcExprs RPAR    /* chiamata con almeno un parametro */
+         | ID LPAR RPAR             /* chiamata con nessun parametro */
+
+IfStat ::= IF Expr THEN Body Elifs Else ENDIF
+	
+Elifs ::= Elif Elifs	
+      | /* empty */ 	   
+	
+Elif ::= ELIF Expr THEN Body
+
+Else ::= ELSE Body
+     | /* empty */ 
+	
+WhileStat ::= WHILE Expr DO Body ENDWHILE
+
+IOArgs ::= Expr IOArgs    /* qui l'Expr corretta è concatenazione di stringhe o singola stringa*/
+       |  DOLLARSIGN LPAR Expr RPAR IOArgs		
+       | /* empty */ 
+
+ProcExprs::= Expr COMMA ProcExprs
+	  | REF ID COMMA ProcExprs
+          | Expr
+	  | REF ID
+
+Exprs ::= Expr COMMA Exprs
+	| Expr
+
+Expr ::= FunCall
+	| REAL_CONST
+        | INTEGER_CONST
+	| STRING_CONST
+	| ID
+        | TRUE
+        | FALSE
+        | Expr  PLUS Expr
+	| Expr  MINUS Expr
+	| Expr  TIMES Expr
+	| Expr  DIV Expr
+	| Expr  AND Expr
+	| Expr  OR Expr
+	| Expr  GT Expr
+	| Expr  GE Expr
+	| Expr  LT Expr
+	| Expr  LE Expr
+	| Expr  EQ Expr
+	| Expr  NE Expr
+	| LPAR Expr RPAR
+	| MINUS Expr
+	| NOT Expr
+
+
+
+
+
+SPECIFICHE LESSICALI
+
+
+VAR "var"
+COLON ":"
+ASSIGN "^="
+SEMI ";"
+ID espressione per identificatore
+COMMA ","
+REAL_CONST espressione per numero reale
+INTEGER_CONST  espressione per numero intero
+STRING_CONST   espressione per stringa costante
+TRUE "true"
+FALSE "false"
+REAL "real"
+INTEGER "integer"
+STRING "string"
+BOOLEAN "boolean"
+RETURN "return"
+FUNCTION "func"
+TYPERETURN "->"
+ENDFUNCTION "endfunc"
+LPAR "("
+RPAR ")"
+PROCEDURE "proc"
+ENDPROCEDURE "endproc"
+OUT "out"
+WRITE "-->"
+WRITERETURN "-->!"
+DOLLARSIGN "$"
+READ "<--"
+IF "if"
+THEN "then"
+ELSE "else"
+ENDIF "endif"
+ELIF "elseif"
+WHILE "while"
+DO "do"
+ENDWHILE "endwhile"
+PLUS '+'
+MINUS '-'
+TIMES '*'
+DIV '/'
+EQ '=' 
+NE '<>' 
+LT '<' 
+LE '<=' 
+GT '>' 
+GE '>='
+AND '&&'
+OR '||'
+NOT '!'
+ENDVAR '\'
+REF '@'
+
+I commenti vanno racchiusi fra % di apertura e % di chiusura
+Bisogna dare errore di 
+- "Stringa costante non completata" nel caso il programma input presenti una stringa 
+costante aperta ma non chiusa (es. "questa è una stringa non chiusa ).
+- "Commento non chiuso" nel caso il programma input presenti un commento non chiuso 
+(es. /* questo è un commento non chiuso )
+
+Nota: in entrambi i casi si raggiunge l'EOF mentre si sta riconoscendo un commento 
+o una stringa. Se si usano gli stati jflex (ad es. COMMENT e STRING), questo si 
+traduce nell'incontrare un EOF mentre si è nel corrispondente stato.
