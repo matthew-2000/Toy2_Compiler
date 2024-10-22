@@ -68,8 +68,9 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <className>MyParserClassName</className>
-                    <symbolsName>MySymbolsClassName</symbolsName>
+                    <outputDirectory>src</outputDirectory>
+                    <cupDefinition>srcjflexcup/parser.cup</cupDefinition>
+                    <expectedConflicts>0</expectedConflicts>
                 </configuration>
             </plugin>
         </plugins>
