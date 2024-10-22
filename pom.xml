@@ -56,7 +56,7 @@
                     </execution>
                 </executions>
             </plugin>
-<!--            <plugin>
+            <plugin>
                 <groupId>com.github.vbmacher</groupId>
                 <artifactId>cup-maven-plugin</artifactId>
                 <version>11b-20160615</version>
@@ -69,10 +69,11 @@
                 </executions>
                 <configuration>
                     <outputDirectory>src</outputDirectory>
-                    <cupDefinition>srcjflexcup/parser.cup</cupDefinition>
-                    <expectedConflicts>0</expectedConflicts>
+                    <cupDefinition>srcjflexcup/Toy2Parser.cup</cupDefinition>
+                    <packageName>unisa.compilatori</packageName>
+                    <expectedConflicts>999</expectedConflicts>
                 </configuration>
-            </plugin>-->
+            </plugin>
         </plugins>
     </build>
 

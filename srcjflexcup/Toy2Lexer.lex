@@ -27,7 +27,7 @@ WhiteSpace = {LineTerminator} | [ \t\f]
 
     private Symbol errorSymbol(String message){
         String errorMsg = "Error at line " + (yyline + 1) + ", column " + (yycolumn + 1) + ": " + message;
-        return new Symbol(sym.ERROR, yyline + 1, yycolumn + 1, errorMsg);
+        return new Symbol(sym.EOF, yyline + 1, yycolumn + 1, errorMsg);
     }
 %}
 
@@ -87,8 +87,6 @@ WhiteSpace = {LineTerminator} | [ \t\f]
     "$"             { return symbol(sym.DOLLAR); }  /* Simbolo di concatenazione stringhe */
     "("             { return symbol(sym.LPAR); }
     ")"             { return symbol(sym.RPAR); }
-    "{"             { return symbol(sym.LBRACE); }
-    "}"             { return symbol(sym.RBRACE); }
     {WhiteSpace}    { /* Ignora spazi bianchi e linee vuote */ }
 }
 

@@ -1,0 +1,147 @@
+import java_cup.runtime.*;
+import java.util.List;
+import java.util.ArrayList;
+
+terminal VAR, PROC, FUNC, ENDVAR, ENDPROC, ENDFUNC, RETURN, IF, THEN, ELSE, ELIF, ENDIF, WHILE, DO, ENDWHILE;
+terminal WRITE, WRITERETURN, READ, TRUE, FALSE;
+terminal REAL, INTEGER, STRING, BOOLEAN, LPAR, RPAR, SEMI, COMMA, COLON, ASSIGN, REF, DOLLAR;
+terminal PLUS, MINUS, UMINUS, TIMES, DIV, EQ, NE, LT, LE, GT, GE, AND, OR, NOT;
+terminal REAL_CONST, NUMBER_LITERAL, STRING_LITERAL;
+terminal IDENTIFIER;
+terminal TYPERETURN;
+terminal OUT;
+
+non terminal Program, Iter, VarDecl, Decls, Ids, Consts, Const, Type;
+non terminal Function, FuncParams, OtherFuncParams, Types;
+non terminal Procedure, ProcParams, OtherProcParams, ProcParamId;
+non terminal Body, Stat, FunCall, ProcCall, IfStat, Elifs, Elif, Else, WhileStat;
+non terminal IOArgs, ProcExprs, Exprs, Expr;
+
+/* Definizione delle precedenze degli operatori */
+precedence left OR;
+precedence left AND;
+precedence left EQ, NE;
+precedence left LT, LE, GT, GE;
+precedence left PLUS, MINUS;
+precedence left TIMES, DIV;
+precedence right NOT;
+precedence right UMINUS;
+
+Program ::= Iter Procedure Iter;
+
+Iter ::= VarDecl Iter
+      | Function Iter
+      | Procedure Iter
+      | /* empty */ ;
+
+VarDecl ::= VAR Decls;
+
+Decls ::= Ids COLON Type SEMI Decls
+       | Ids ASSIGN Consts SEMI Decls
+       | Ids COLON Type SEMI ENDVAR
+       | Ids ASSIGN Consts SEMI ENDVAR;
+
+Ids ::= IDENTIFIER COMMA Ids
+     | IDENTIFIER;
+
+Consts ::= Const COMMA Consts
+        | Const;
+
+Const ::= REAL_CONST
+        | NUMBER_LITERAL
+        | STRING_LITERAL
+        | TRUE
+        | FALSE;
+
+Type ::= REAL
+      | INTEGER
+      | STRING
+      | BOOLEAN;
+
+Function ::= FUNC IDENTIFIER LPAR FuncParams RPAR TYPERETURN Types COLON Body ENDFUNC;
+
+FuncParams ::= IDENTIFIER COLON Type OtherFuncParams
+            | /* empty */;
+
+OtherFuncParams ::= COMMA IDENTIFIER COLON Type OtherFuncParams
+                 | /* empty */;
+
+Types ::= Type COMMA Types
+       | Type;
+
+Procedure ::= PROC IDENTIFIER LPAR ProcParams RPAR COLON Body ENDPROC;
+
+ProcParams ::= ProcParamId COLON Type OtherProcParams
+            | /* empty */;
+
+OtherProcParams ::= COMMA ProcParamId COLON Type OtherProcParams
+                 | /* empty */;
+
+ProcParamId ::= IDENTIFIER
+              | OUT IDENTIFIER;
+
+Body ::= VarDecl Body
+       | Stat Body
+       | /* empty */;
+
+Stat ::= Ids ASSIGN Exprs SEMI
+       | ProcCall SEMI
+       | RETURN Exprs SEMI
+       | WRITE IOArgs SEMI
+       | WRITERETURN IOArgs SEMI
+       | READ IOArgs SEMI
+       | IfStat SEMI
+       | WhileStat SEMI;
+
+FunCall ::= IDENTIFIER LPAR Exprs RPAR
+          | IDENTIFIER LPAR RPAR;
+
+ProcCall ::= IDENTIFIER LPAR ProcExprs RPAR
+           | IDENTIFIER LPAR RPAR;
+
+IfStat ::= IF Expr THEN Body Elifs Else ENDIF;
+
+Elifs ::= Elif Elifs
+        | /* empty */;
+
+Elif ::= ELIF Expr THEN Body;
+
+Else ::= ELSE Body
+       | /* empty */;
+
+WhileStat ::= WHILE Expr DO Body ENDWHILE;
+
+IOArgs ::= Expr IOArgs
+         | DOLLAR LPAR Expr RPAR IOArgs
+         | /* empty */;
+
+ProcExprs ::= Expr COMMA ProcExprs
+           | REF IDENTIFIER COMMA ProcExprs
+           | Expr
+           | REF IDENTIFIER;
+
+Exprs ::= Expr COMMA Exprs
+       | Expr;
+
+Expr ::= FunCall
+       | REAL_CONST
+       | NUMBER_LITERAL
+       | STRING_LITERAL
+       | IDENTIFIER
+       | TRUE
+       | FALSE
+       | Expr PLUS Expr
+       | Expr MINUS Expr
+       | Expr TIMES Expr
+       | Expr DIV Expr
+       | Expr AND Expr
+       | Expr OR Expr
+       | Expr GT Expr
+       | Expr GE Expr
+       | Expr LT Expr
+       | Expr LE Expr
+       | Expr EQ Expr
+       | Expr NE Expr
+       | LPAR Expr RPAR
+       | MINUS Expr %prec UMINUS
+       | NOT Expr;
