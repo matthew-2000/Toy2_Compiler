@@ -1,0 +1,76 @@
+% Programma che permette all'utente di scegliere un'operazione aritmetica
+   e continuare o terminare il ciclo delle operazioni %
+
+proc main():
+    var
+        scelta, continua, a, b, risultato : integer;
+        op : string;
+
+    continua ^= 1;  % Inizializza il ciclo per continuare %
+
+    while continua = 1 do
+        % Mostra il menu %
+        --> "Scegli l'operazione aritmetica:";
+        --> "1: Somma";
+        --> "2: Sottrazione";
+        --> "3: Moltiplicazione";
+        --> "4: Divisione";
+        --> "Inserisci la tua scelta: " $(scelta);
+
+        % Richiede input per i due numeri %
+        <-- "Inserisci il primo numero: " $(a);
+        <-- "Inserisci il secondo numero: " $(b);
+
+        % Esegue l'operazione scelta %
+        if scelta = 1 then
+            risultato ^= somma(a, b);
+            op ^= "somma";
+        elseif scelta = 2 then
+            risultato ^= sottrazione(a, b);
+            op ^= "sottrazione";
+        elseif scelta = 3 then
+            risultato ^= moltiplicazione(a, b);
+            op ^= "moltiplicazione";
+        elseif scelta = 4 then
+            risultato ^= divisione(a, b);
+            op ^= "divisione";
+        else
+            --> "Scelta non valida.";
+            continue;
+        endif;
+
+        % Stampa il risultato %
+        --> "Il risultato della " + op + " tra " + a + " e " + b + " è: " + risultato;
+
+        % Chiede se si vuole continuare %
+        --> "Vuoi continuare? Inserisci 1 per sì, 0 per no: " $(continua);
+
+    endwhile;
+
+    --> "Programma terminato.";
+
+endproc
+
+% Funzione per somma %
+func somma(x: integer, y: integer) -> integer:
+    return x + y;
+endfunc
+
+% Funzione per sottrazione %
+func sottrazione(x: integer, y: integer) -> integer:
+    return x - y;
+endfunc
+
+% Funzione per moltiplicazione %
+func moltiplicazione(x: integer, y: integer) -> integer:
+    return x * y;
+endfunc
+
+% Funzione per divisione (controlla divisione per zero) %
+func divisione(x: integer, y: integer) -> integer:
+    if y = 0 then
+        --> "Errore: divisione per zero non consentita.";
+        return 0;
+    endif;
+    return x / y;
+endfunc
