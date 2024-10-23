@@ -105,7 +105,7 @@ WhiteSpace = {LineTerminator} | [ \t\f]
 <STRING>   \"             { yybegin(YYINITIAL); return symbol(sym.STRING_LITERAL, yytext()); }
 <STRING>   \n             { throw new Error("Stringa costante non completata"); }
 
-/* Gestione EOF */
+/* Gestione EOF*/
 <<EOF>>  { return symbol(sym.EOF); }
 
 /* Gestione errori */

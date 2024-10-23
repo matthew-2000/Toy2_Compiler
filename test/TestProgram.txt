@@ -1,76 +1,74 @@
-% Programma che permette all'utente di scegliere un'operazione aritmetica
-   e continuare o terminare il ciclo delle operazioni %
 
-proc main():
-    var
-        scelta, continua, a, b, risultato : integer;
-        op : string;
+%
+ Programma esemplificativo del linguaggio Toy2 a volte volutamente ridondante.
+ La sua sintassi deve essere ancora attentamente verificata
 
-    continua ^= 1;  % Inizializza il ciclo per continuare %
+ Questo programma calcola e stampa la somma di due numeri, incrementata di 1.
+ Inoltre ne definisce la taglia
+%
 
-    while continua = 1 do
-        % Mostra il menu %
-        --> "Scegli l'operazione aritmetica:";
-        --> "1: Somma";
-        --> "2: Sottrazione";
-        --> "3: Moltiplicazione";
-        --> "4: Divisione";
-        --> "Inserisci la tua scelta: " $(scelta);
 
-        % Richiede input per i due numeri %
-        <-- "Inserisci il primo numero: " $(a);
-        <-- "Inserisci il secondo numero: " $(b);
 
-        % Esegue l'operazione scelta %
-        if scelta = 1 then
-            risultato ^= somma(a, b);
-            op ^= "somma";
-        elseif scelta = 2 then
-            risultato ^= sottrazione(a, b);
-            op ^= "sottrazione";
-        elseif scelta = 3 then
-            risultato ^= moltiplicazione(a, b);
-            op ^= "moltiplicazione";
-        elseif scelta = 4 then
-            risultato ^= divisione(a, b);
-            op ^= "divisione";
-        else
-            --> "Scelta non valida.";
-            continue;
-        endif;
+% fa somma e restituisce anche la taglia del numero, oltre che il risultato%
+proc sommac(a: integer, d: integer, b:real, out size: string, out result: real):
 
-        % Stampa il risultato %
-        --> "Il risultato della " + op + " tra " + a + " e " + b + " è: " + risultato;
+	result  ^=  a + b + c + d;
 
-        % Chiede se si vuole continuare %
-        --> "Vuoi continuare? Inserisci 1 per sì, 0 per no: " $(continua);
-
-    endwhile;
-
-    --> "Programma terminato.";
+	if result > 100 then
+		var valore ^= "grande";\
+ 		size ^= valore;
+	elseif result > 50 then
+		var valore ^= "media";\
+ 		size ^= valore;
+	else
+		var valore ^= "piccola";\
+ 		size ^= valore;
+	endif;
 
 endproc
 
-% Funzione per somma %
-func somma(x: integer, y: integer) -> integer:
-    return x + y;
-endfunc
 
-% Funzione per sottrazione %
-func sottrazione(x: integer, y: integer) -> integer:
-    return x - y;
-endfunc
+var c ^= 1;\
 
-% Funzione per moltiplicazione %
-func moltiplicazione(x: integer, y: integer) -> integer:
-    return x * y;
-endfunc
 
-% Funzione per divisione (controlla divisione per zero) %
-func divisione(x: integer, y: integer) -> integer:
-    if y = 0 then
-        --> "Errore: divisione per zero non consentita.";
-        return 0;
-    endif;
-    return x / y;
+% programma principale %
+proc main():
+      var
+	a, b ^= 1, 2.2; x ^= 3;
+	taglia, ans1 : string;
+	ans ^= "no";
+	risultato ^= 0.0;\
+
+	sommac(a, x, b, @taglia, @risultato);
+
+	var valore ^= "nok";\
+
+	valore ^= stampa("la somma di " + a + " e " + b +  " incrementata di "  + c +  " e' " + taglia);
+	valore ^= stampa("ed e' pari a " + risultato);
+
+	<-- "vuoi continuare? (si/no) - inserisci due volte la risposta\n" $(ans) $(ans1) ;
+	while ans = "si" do
+	    <-- "inserisci un intero:" $(a);
+	    <-- "inserisci un reale:" $(b);
+	    sommac(a, x, b, @taglia, @risultato);
+	    valore ^= stampa("la somma di " + a + " e " + b +  " incrementata di " + c + " e' " + taglia);
+	    valore ^= stampa(" ed e' pari a " + risultato);
+	    <-- "vuoi continuare? (si/no):\t" $(ans);
+   endwhile;
+
+        -->! ;
+        --> "ciao";
+endproc
+
+
+% stampa il messaggio dopo 4 ritorni a capo %
+func stampa(messaggio: string)-> string:
+    var i ^= 0;\
+    while i < 4 do
+	-->! ;
+	i ^= i +1;
+    endwhile;
+
+     --> $(messaggio);
+    return "ok";
 endfunc

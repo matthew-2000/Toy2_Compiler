@@ -34,163 +34,156 @@ non terminal Program, Iter, VarDecl, Decls, Ids, Consts, Const, Type;
 non terminal Function, FuncParams, OtherFuncParams, Types;
 non terminal Procedure, ProcParams, OtherProcParams, ProcParamId;
 non terminal Body, Stat, FunCall, ProcCall, IfStat, Elifs, Elif, Else, WhileStat;
-non terminal IOArgs, ProcExprs, Exprs, Expr;
+non terminal IOArgs, ProcExprs, Exprs, Expr, IterWithoutProcedure;
 
 /* Definizione delle precedenze degli operatori */
 precedence left OR;
 precedence left AND;
-precedence left EQ, NE;
-precedence left LT, LE, GT, GE;
+precedence right NOT;
+precedence nonassoc EQ, NE, LT, LE, GT, GE;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
-precedence right NOT;
-precedence right UMINUS;
 
-/* Regole grammaticali */
-Program ::= Iter Procedure Iter
-          | error {: reportError("Syntax error in Program", null); :};
+
+Program ::= IterWithoutProcedure Procedure Iter;
+
+IterWithoutProcedure ::= VarDecl IterWithoutProcedure
+| Function IterWithoutProcedure
+| /* empty */ ;
 
 Iter ::= VarDecl Iter
-      | Function Iter
-      | Procedure Iter
-      | /* empty */
-      | error {: reportError("Syntax error in Iteration", null); :};
+| Function Iter
+| Procedure Iter
+| /* empty */ ;
 
 VarDecl ::= VAR Decls
-          | error {: reportError("Syntax error in Variable Declaration", null); :};
+;
 
 Decls ::= Ids COLON Type SEMI Decls
-       | Ids ASSIGN Consts SEMI Decls
-       | Ids COLON Type SEMI ENDVAR
-       | Ids ASSIGN Consts SEMI ENDVAR
-       | error {: reportError("Syntax error in Declarations", null); :};
+| Ids:ids ASSIGN Consts:consts SEMI Decls:decls
+| Ids:ids COLON Type:tipo SEMI ENDVAR
+| Ids:ids ASSIGN Consts:consts SEMI ENDVAR
+;
 
-Ids ::= IDENTIFIER COMMA Ids
-     | IDENTIFIER
-     | error {: reportError("Syntax error in Identifiers", null); :};
+Ids ::= IDENTIFIER:id COMMA Ids:ids
+| IDENTIFIER:id
+;
 
-Consts ::= Const COMMA Consts
-        | Const
-        | error {: reportError("Syntax error in Constants", null); :};
+Consts ::= Const:costante COMMA Consts:listaCostanti
+| Const:costante
+;
 
-Const ::= REAL_CONST
-        | NUMBER_LITERAL
-        | STRING_LITERAL
-        | TRUE
-        | FALSE
-        | error {: reportError("Syntax error in Constant", null); :};
+Const ::= REAL_CONST:lessema
+| NUMBER_LITERAL
+| STRING_LITERAL
+| TRUE
+| FALSE ;
 
 Type ::= REAL
-      | INTEGER
-      | STRING
-      | BOOLEAN
-      | error {: reportError("Syntax error in Type", null); :};
+| INTEGER
+| STRING
+| BOOLEAN ;
 
-Function ::= FUNC IDENTIFIER LPAR FuncParams RPAR TYPERETURN Types COLON Body ENDFUNC
-           | error {: reportError("Syntax error in Function Declaration", null); :};
+Function ::= FUNC IDENTIFIER LPAR FuncParams RPAR TYPERETURN Types
+;
 
 FuncParams ::= IDENTIFIER COLON Type OtherFuncParams
-            | /* empty */
-            | error {: reportError("Syntax error in Function Parameters", null); :};
+| /* empty */;
 
-OtherFuncParams ::= COMMA IDENTIFIER COLON Type OtherFuncParams
-                 | /* empty */
-                 | error {: reportError("Syntax error in Additional Function Parameters", null); :};
+OtherFuncParams ::= COMMA IDENTIFIER COLON Type OtherFuncParams:paramsList
+| /* empty */;
 
 Types ::= Type COMMA Types
-       | Type
-       | error {: reportError("Syntax error in Return Types", null); :};
+| Type
+;
 
 Procedure ::= PROC IDENTIFIER LPAR ProcParams RPAR COLON Body ENDPROC
-            | error {: reportError("Syntax error in Procedure Declaration", null); :};
+;
 
-ProcParams ::= ProcParamId COLON Type OtherProcParams
-            | /* empty */
-            | error {: reportError("Syntax error in Procedure Parameters", null); :};
+ProcParams::= ProcParamId COLON Type OtherProcParams
+| /* empty */ ;
 
 OtherProcParams ::= COMMA ProcParamId COLON Type OtherProcParams
-                 | /* empty */
-                 | error {: reportError("Syntax error in Additional Procedure Parameters", null); :};
+| /* empty */;
 
 ProcParamId ::= IDENTIFIER
-              | OUT IDENTIFIER
-              | error {: reportError("Syntax error in Procedure Parameter ID", null); :};
+| OUT IDENTIFIER
+;
 
 Body ::= VarDecl Body
-       | Stat Body
-       | /* empty */
-       | error {: reportError("Syntax error in Body", null); :};
+| Stat Body
+| /* empty */;
 
 Stat ::= Ids ASSIGN Exprs SEMI
-       | ProcCall SEMI
-       | RETURN Exprs SEMI
-       | WRITE IOArgs SEMI
-       | WRITERETURN IOArgs SEMI
-       | READ IOArgs SEMI
-       | IfStat SEMI
-       | WhileStat SEMI
-       | error {: reportError("Syntax error in Statement", null); :};
+| ProcCall SEMI
+| RETURN Exprs SEMI
+| WRITE IOArgs SEMI
+| WRITERETURN IOArgs SEMI
+| READ IOArgs SEMI
+| IfStat SEMI
+| WhileStat SEMI
+;
 
 FunCall ::= IDENTIFIER LPAR Exprs RPAR
-          | IDENTIFIER LPAR RPAR
-          | error {: reportError("Syntax error in Function Call", null); :};
+| IDENTIFIER LPAR RPAR
+;
 
 ProcCall ::= IDENTIFIER LPAR ProcExprs RPAR
-           | IDENTIFIER LPAR RPAR
-           | error {: reportError("Syntax error in Procedure Call", null); :};
+| IDENTIFIER LPAR RPAR
+;
 
 IfStat ::= IF Expr THEN Body Elifs Else ENDIF
-         | error {: reportError("Syntax error in If Statement", null); :};
+;
 
 Elifs ::= Elif Elifs
-        | /* empty */
-        | error {: reportError("Syntax error in Elifs", null); :};
+| /* empty */;
 
 Elif ::= ELIF Expr THEN Body
-       | error {: reportError("Syntax error in Elif", null); :};
+;
 
 Else ::= ELSE Body
-       | /* empty */
-       | error {: reportError("Syntax error in Else", null); :};
+| /* empty */;
 
-WhileStat ::= WHILE Expr DO Body ENDWHILE
-            | error {: reportError("Syntax error in While Statement", null); :};
+WhileStat ::= WHILE Expr DO Body ENDWHILE;
 
-IOArgs ::= Expr IOArgs
-         | DOLLAR LPAR Expr RPAR IOArgs
-         | /* empty */
-         | error {: reportError("Syntax error in IO Arguments", null); :};
+IOArgs ::= IOArgs IOArgs
+| DOLLAR LPAR Expr RPAR IOArgs | /* empty */;
 
-ProcExprs ::= Expr COMMA ProcExprs
-           | REF IDENTIFIER COMMA ProcExprs
-           | Expr
-           | REF IDENTIFIER
-           | error {: reportError("Syntax error in Procedure Expressions", null); :};
+IOArgs ::= IDENTIFIER
+| STRING_LITERAL
+| IOArgs PLUS IOArgs
+;
+
+ProcExprs::= Expr COMMA ProcExprs
+| REF IDENTIFIER COMMA ProcExprs
+| Expr
+| REF IDENTIFIER
+;
 
 Exprs ::= Expr COMMA Exprs
-       | Expr
-       | error {: reportError("Syntax error in Expressions", null); :};
+| Expr
+;
 
 Expr ::= FunCall
-       | REAL_CONST
-       | NUMBER_LITERAL
-       | STRING_LITERAL
-       | IDENTIFIER
-       | TRUE
-       | FALSE
-       | Expr PLUS Expr
-       | Expr MINUS Expr
-       | Expr TIMES Expr
-       | Expr DIV Expr
-       | Expr AND Expr
-       | Expr OR Expr
-       | Expr GT Expr
-       | Expr GE Expr
-       | Expr LT Expr
-       | Expr LE Expr
-       | Expr EQ Expr
-       | Expr NE Expr
-       | LPAR Expr RPAR
-       | MINUS Expr %prec UMINUS
-       | NOT Expr
-       | error {: reportError("Syntax error in Expression", null); :};
+| REAL_CONST
+| NUMBER_LITERAL
+| STRING_LITERAL
+| IDENTIFIER
+| TRUE
+| FALSE
+| Expr PLUS Expr
+| Expr MINUS Expr
+| Expr TIMES Expr
+| Expr DIV Expr
+| Expr AND Expr
+| Expr OR Expr
+| Expr GT Expr
+| Expr GE Expr
+| Expr LT Expr
+| Expr LE Expr
+| Expr EQ Expr
+| Expr NE Expr
+| LPAR Expr RPAR
+| MINUS Expr
+| NOT Expr
+;

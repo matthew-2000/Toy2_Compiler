@@ -1,6 +1,8 @@
 import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+
+import esercitazione4.Toy2Lexer;
 import java_cup.runtime.Symbol;
 import unisa.compilatori.parser;
 import unisa.compilatori.sym;
@@ -34,7 +36,9 @@ public class Main {
             // Esecuzione del parsing
             System.out.println("\n=== Avvio del parsing ===");
             Symbol result = parser.parse();
-            System.out.println("=== Parsing completato con successo! ===");
+            while (result.sym != sym.EOF) {
+                System.out.println(result);
+            }
 
         } catch (FileNotFoundException e) {
             System.err.println("Errore: il file " + filePath + " non è stato trovato.");
@@ -76,7 +80,7 @@ public class Main {
                 return "ENDWHILE";
             case sym.RETURN:
                 return "RETURN";
-            case sym.NUMBER_LITERAL:
+            case sym.INTEGER:
                 return "NUMBER_LITERAL";
             case sym.STRING_LITERAL:
                 return "STRING_LITERAL";
@@ -138,8 +142,6 @@ public class Main {
                 return "ENDVAR";
             case sym.REAL:
                 return "REAL";
-            case sym.INTEGER:
-                return "INTEGER";
             case sym.STRING:
                 return "STRING";
             case sym.BOOLEAN:
