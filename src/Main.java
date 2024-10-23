@@ -8,7 +8,7 @@ import unisa.compilatori.sym;
 public class Main {
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/TestProgram.txt";
+        String filePath = "test/test2.txt";
 
         // Tentiamo di aprire il file di input
         try {
@@ -33,7 +33,7 @@ public class Main {
 
             // Esecuzione del parsing
             System.out.println("\n=== Avvio del parsing ===");
-            Symbol result = parser.parse();
+            parser.debug_parse();
             System.out.println("=== Parsing completato con successo! ===");
 
         } catch (FileNotFoundException e) {
@@ -46,7 +46,6 @@ public class Main {
         }
     }
 
-    // Metodo helper per ottenere il nome del token dal suo valore numerico
     private static String getTokenName(int tokenSym) {
         switch (tokenSym) {
             case sym.VAR:
@@ -78,11 +77,9 @@ public class Main {
             case sym.RETURN:
                 return "RETURN";
             case sym.NUMBER_LITERAL:
-                return "INTEGER_CONST";
-            case sym.REAL_CONST:
-                return "REAL_CONST";
+                return "NUMBER_LITERAL";
             case sym.STRING_LITERAL:
-                return "STRING_CONST";
+                return "STRING_LITERAL";
             case sym.TRUE:
                 return "TRUE";
             case sym.FALSE:
@@ -128,7 +125,7 @@ public class Main {
             case sym.COMMA:
                 return "COMMA";
             case sym.DOLLAR:
-                return "DOLLARSIGN";
+                return "DOLLAR";
             case sym.WRITE:
                 return "WRITE";
             case sym.WRITERETURN:
@@ -139,6 +136,20 @@ public class Main {
                 return "REF";
             case sym.ENDVAR:
                 return "ENDVAR";
+            case sym.REAL:
+                return "REAL";
+            case sym.INTEGER:
+                return "INTEGER";
+            case sym.STRING:
+                return "STRING";
+            case sym.BOOLEAN:
+                return "BOOLEAN";
+            case sym.UMINUS:
+                return "UMINUS";
+            case sym.TYPERETURN:
+                return "TYPERETURN";
+            case sym.OUT:
+                return "OUT";
             case sym.EOF:
                 return "EOF";
             default:

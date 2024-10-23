@@ -1,0 +1,3 @@
+proc main(out a: integer, b: integer):
+a ^= a +b;
+endproc
