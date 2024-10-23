@@ -33,7 +33,7 @@ public class Main {
 
             // Esecuzione del parsing
             System.out.println("\n=== Avvio del parsing ===");
-            parser.debug_parse();
+            Symbol result = parser.parse();
             System.out.println("=== Parsing completato con successo! ===");
 
         } catch (FileNotFoundException e) {

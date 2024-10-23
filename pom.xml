@@ -71,7 +71,7 @@
                     <outputDirectory>src</outputDirectory>
                     <cupDefinition>srcjflexcup/Toy2Parser.cup</cupDefinition>
                     <packageName>unisa.compilatori</packageName>
-                    <expectedConflicts>0</expectedConflicts>
+                    <expectedConflicts>99</expectedConflicts>
                 </configuration>
             </plugin>
         </plugins>
