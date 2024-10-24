@@ -8,7 +8,7 @@ import unisa.compilatori.sym;
 public class Main {
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test1.txt";
+        String filePath = "test/test2.txt";
 
         // Tentiamo di aprire il file di input
         try {
