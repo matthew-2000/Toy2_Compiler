@@ -1,4 +1,5 @@
 import java_cup.runtime.*;
+import unisa.compilatori.sym;
 
 %%
 %class Toy2Lexer
