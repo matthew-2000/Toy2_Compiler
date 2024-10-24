@@ -8,7 +8,7 @@ import unisa.compilatori.sym;
 public class Main {
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test2.txt";
+        String filePath = "test/test1.txt";
 
         // Tentiamo di aprire il file di input
         try {
@@ -33,7 +33,8 @@ public class Main {
 
             // Esecuzione del parsing
             System.out.println("\n=== Avvio del parsing ===");
-            Symbol result = parser.parse();
+            Symbol result = parser.debug_parse();
+            System.out.println(result.toString());
             System.out.println("=== Parsing completato con successo! ===");
 
         } catch (FileNotFoundException e) {
@@ -47,113 +48,60 @@ public class Main {
     }
 
     private static String getTokenName(int tokenSym) {
-        switch (tokenSym) {
-            case sym.VAR:
-                return "VAR";
-            case sym.PROC:
-                return "PROC";
-            case sym.ENDPROC:
-                return "ENDPROC";
-            case sym.FUNC:
-                return "FUNC";
-            case sym.ENDFUNC:
-                return "ENDFUNC";
-            case sym.IF:
-                return "IF";
-            case sym.THEN:
-                return "THEN";
-            case sym.ELSE:
-                return "ELSE";
-            case sym.ELIF:
-                return "ELIF";
-            case sym.ENDIF:
-                return "ENDIF";
-            case sym.WHILE:
-                return "WHILE";
-            case sym.DO:
-                return "DO";
-            case sym.ENDWHILE:
-                return "ENDWHILE";
-            case sym.RETURN:
-                return "RETURN";
-            case sym.NUMBER_LITERAL:
-                return "NUMBER_LITERAL";
-            case sym.STRING_LITERAL:
-                return "STRING_LITERAL";
-            case sym.TRUE:
-                return "TRUE";
-            case sym.FALSE:
-                return "FALSE";
-            case sym.IDENTIFIER:
-                return "ID";
-            case sym.ASSIGN:
-                return "ASSIGN";
-            case sym.PLUS:
-                return "PLUS";
-            case sym.MINUS:
-                return "MINUS";
-            case sym.TIMES:
-                return "TIMES";
-            case sym.DIV:
-                return "DIV";
-            case sym.EQ:
-                return "EQ";
-            case sym.NE:
-                return "NE";
-            case sym.LT:
-                return "LT";
-            case sym.LE:
-                return "LE";
-            case sym.GT:
-                return "GT";
-            case sym.GE:
-                return "GE";
-            case sym.AND:
-                return "AND";
-            case sym.OR:
-                return "OR";
-            case sym.NOT:
-                return "NOT";
-            case sym.LPAR:
-                return "LPAR";
-            case sym.RPAR:
-                return "RPAR";
-            case sym.SEMI:
-                return "SEMI";
-            case sym.COLON:
-                return "COLON";
-            case sym.COMMA:
-                return "COMMA";
-            case sym.DOLLAR:
-                return "DOLLAR";
-            case sym.WRITE:
-                return "WRITE";
-            case sym.WRITERETURN:
-                return "WRITERETURN";
-            case sym.READ:
-                return "READ";
-            case sym.REF:
-                return "REF";
-            case sym.ENDVAR:
-                return "ENDVAR";
-            case sym.REAL:
-                return "REAL";
-            case sym.INTEGER:
-                return "INTEGER";
-            case sym.STRING:
-                return "STRING";
-            case sym.BOOLEAN:
-                return "BOOLEAN";
-            case sym.UMINUS:
-                return "UMINUS";
-            case sym.TYPERETURN:
-                return "TYPERETURN";
-            case sym.OUT:
-                return "OUT";
-            case sym.EOF:
-                return "EOF";
-            default:
-                return "UNKNOWN";
-        }
+        return switch (tokenSym) {
+            case sym.VAR -> "VAR";
+            case sym.PROC -> "PROC";
+            case sym.ENDPROC -> "ENDPROC";
+            case sym.FUNC -> "FUNC";
+            case sym.ENDFUNC -> "ENDFUNC";
+            case sym.IF -> "IF";
+            case sym.THEN -> "THEN";
+            case sym.ELSE -> "ELSE";
+            case sym.ELIF -> "ELIF";
+            case sym.ENDIF -> "ENDIF";
+            case sym.WHILE -> "WHILE";
+            case sym.DO -> "DO";
+            case sym.ENDWHILE -> "ENDWHILE";
+            case sym.RETURN -> "RETURN";
+            case sym.NUMBER_LITERAL -> "NUMBER_LITERAL";
+            case sym.STRING_LITERAL -> "STRING_LITERAL";
+            case sym.TRUE -> "TRUE";
+            case sym.FALSE -> "FALSE";
+            case sym.IDENTIFIER -> "ID";
+            case sym.ASSIGN -> "ASSIGN";
+            case sym.PLUS -> "PLUS";
+            case sym.MINUS -> "MINUS";
+            case sym.TIMES -> "TIMES";
+            case sym.DIV -> "DIV";
+            case sym.EQ -> "EQ";
+            case sym.NE -> "NE";
+            case sym.LT -> "LT";
+            case sym.LE -> "LE";
+            case sym.GT -> "GT";
+            case sym.GE -> "GE";
+            case sym.AND -> "AND";
+            case sym.OR -> "OR";
+            case sym.NOT -> "NOT";
+            case sym.LPAR -> "LPAR";
+            case sym.RPAR -> "RPAR";
+            case sym.SEMI -> "SEMI";
+            case sym.COLON -> "COLON";
+            case sym.COMMA -> "COMMA";
+            case sym.DOLLAR -> "DOLLAR";
+            case sym.WRITE -> "WRITE";
+            case sym.WRITERETURN -> "WRITERETURN";
+            case sym.READ -> "READ";
+            case sym.REF -> "REF";
+            case sym.ENDVAR -> "ENDVAR";
+            case sym.REAL -> "REAL";
+            case sym.INTEGER -> "INTEGER";
+            case sym.STRING -> "STRING";
+            case sym.BOOLEAN -> "BOOLEAN";
+            case sym.UMINUS -> "UMINUS";
+            case sym.TYPERETURN -> "TYPERETURN";
+            case sym.OUT -> "OUT";
+            case sym.EOF -> "EOF";
+            default -> "UNKNOWN";
+        };
     }
 }

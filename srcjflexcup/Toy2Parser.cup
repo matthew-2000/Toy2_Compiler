@@ -1,24 +1,3 @@
-import java_cup.runtime.*;
-import java.util.List;
-import java.util.ArrayList;
-
-/* Blocco di codice Java per includere le funzioni di gestione degli errori */
-parser code {:
-    // Funzione per riportare errori con posizione
-    public void reportError(String message, Symbol s) {
-        if (s != null) {
-            System.err.println("Error: " + message + " at line " + s.left + ", column " + s.right);
-        } else {
-            System.err.println("Error: " + message);
-        }
-    }
-
-    // Funzione per segnalare errori generici
-    public void reportGeneralError(String message) {
-        System.err.println("Error: " + message);
-    }
-:}
-
 /* Dichiarazione dei terminali */
 terminal VAR, PROC, FUNC, ENDVAR, ENDPROC, ENDFUNC, RETURN, IF, THEN, ELSE, ELIF, ENDIF, WHILE, DO, ENDWHILE;
 terminal WRITE, WRITERETURN, READ, TRUE, FALSE;
@@ -34,163 +13,170 @@ non terminal Program, Iter, VarDecl, Decls, Ids, Consts, Const, Type;
 non terminal Function, FuncParams, OtherFuncParams, Types;
 non terminal Procedure, ProcParams, OtherProcParams, ProcParamId;
 non terminal Body, Stat, FunCall, ProcCall, IfStat, Elifs, Elif, Else, WhileStat;
-non terminal IOArgs, ProcExprs, Exprs, Expr;
+non terminal IOArg, IOArgsList, ProcExprs, Exprs, Expr, IterWithoutProcedure;
 
 /* Definizione delle precedenze degli operatori */
 precedence left OR;
 precedence left AND;
-precedence left EQ, NE;
-precedence left LT, LE, GT, GE;
+precedence right NOT;
+precedence nonassoc EQ, NE, LT, LE, GT, GE;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
-precedence right NOT;
-precedence right UMINUS;
 
-/* Regole grammaticali */
-Program ::= Iter Procedure Iter
-          | error {: reportError("Syntax error in Program", null); :};
+/* Definizione del Programma principale */
+Program ::= IterWithoutProcedure Procedure Iter;
 
+/* Iterazione senza procedure */
+IterWithoutProcedure ::= VarDecl IterWithoutProcedure
+    | Function IterWithoutProcedure
+    | /* empty */;
+
+/* Iterazione con procedure */
 Iter ::= VarDecl Iter
-      | Function Iter
-      | Procedure Iter
-      | /* empty */
-      | error {: reportError("Syntax error in Iteration", null); :};
+    | Function Iter
+    | Procedure Iter
+    | /* empty */;
 
-VarDecl ::= VAR Decls
-          | error {: reportError("Syntax error in Variable Declaration", null); :};
+/* Dichiarazione di variabili */
+VarDecl ::= VAR Decls;
 
+/* Dichiarazioni e costanti */
 Decls ::= Ids COLON Type SEMI Decls
-       | Ids ASSIGN Consts SEMI Decls
-       | Ids COLON Type SEMI ENDVAR
-       | Ids ASSIGN Consts SEMI ENDVAR
-       | error {: reportError("Syntax error in Declarations", null); :};
+    | Ids ASSIGN Consts SEMI Decls
+    | Ids COLON Type SEMI ENDVAR
+    | Ids ASSIGN Consts SEMI ENDVAR;
 
+/* Lista di identificatori */
 Ids ::= IDENTIFIER COMMA Ids
-     | IDENTIFIER
-     | error {: reportError("Syntax error in Identifiers", null); :};
+    | IDENTIFIER;
 
+/* Lista di costanti */
 Consts ::= Const COMMA Consts
-        | Const
-        | error {: reportError("Syntax error in Constants", null); :};
+    | Const;
 
+/* Definizione di una costante */
 Const ::= REAL_CONST
-        | NUMBER_LITERAL
-        | STRING_LITERAL
-        | TRUE
-        | FALSE
-        | error {: reportError("Syntax error in Constant", null); :};
+    | NUMBER_LITERAL
+    | STRING_LITERAL
+    | TRUE
+    | FALSE;
 
+/* Definizione di un tipo */
 Type ::= REAL
-      | INTEGER
-      | STRING
-      | BOOLEAN
-      | error {: reportError("Syntax error in Type", null); :};
+    | INTEGER
+    | STRING
+    | BOOLEAN;
 
-Function ::= FUNC IDENTIFIER LPAR FuncParams RPAR TYPERETURN Types COLON Body ENDFUNC
-           | error {: reportError("Syntax error in Function Declaration", null); :};
+/* Definizione di una funzione */
+Function ::= FUNC IDENTIFIER LPAR FuncParams RPAR TYPERETURN Types COLON Body ENDFUNC;
 
+/* Parametri di una funzione */
 FuncParams ::= IDENTIFIER COLON Type OtherFuncParams
-            | /* empty */
-            | error {: reportError("Syntax error in Function Parameters", null); :};
+    | /* empty */;
 
+/* Altri parametri di una funzione */
 OtherFuncParams ::= COMMA IDENTIFIER COLON Type OtherFuncParams
-                 | /* empty */
-                 | error {: reportError("Syntax error in Additional Function Parameters", null); :};
+    | /* empty */;
 
+/* Definizione di una lista di tipi */
 Types ::= Type COMMA Types
-       | Type
-       | error {: reportError("Syntax error in Return Types", null); :};
+    | Type;
 
-Procedure ::= PROC IDENTIFIER LPAR ProcParams RPAR COLON Body ENDPROC
-            | error {: reportError("Syntax error in Procedure Declaration", null); :};
+/* Definizione di una procedura */
+Procedure ::= PROC IDENTIFIER LPAR ProcParams RPAR COLON Body ENDPROC;
 
+/* Parametri di una procedura */
 ProcParams ::= ProcParamId COLON Type OtherProcParams
-            | /* empty */
-            | error {: reportError("Syntax error in Procedure Parameters", null); :};
+    | /* empty */;
 
+/* Altri parametri di una procedura */
 OtherProcParams ::= COMMA ProcParamId COLON Type OtherProcParams
-                 | /* empty */
-                 | error {: reportError("Syntax error in Additional Procedure Parameters", null); :};
+    | /* empty */;
 
+/* Definizione di un parametro di procedura */
 ProcParamId ::= IDENTIFIER
-              | OUT IDENTIFIER
-              | error {: reportError("Syntax error in Procedure Parameter ID", null); :};
+    | OUT IDENTIFIER;
 
+/* Definizione del corpo di una funzione o procedura */
 Body ::= VarDecl Body
-       | Stat Body
-       | /* empty */
-       | error {: reportError("Syntax error in Body", null); :};
+    | Stat Body
+    | /* empty */;
 
+/* Dichiarazione delle istruzioni */
 Stat ::= Ids ASSIGN Exprs SEMI
-       | ProcCall SEMI
-       | RETURN Exprs SEMI
-       | WRITE IOArgs SEMI
-       | WRITERETURN IOArgs SEMI
-       | READ IOArgs SEMI
-       | IfStat SEMI
-       | WhileStat SEMI
-       | error {: reportError("Syntax error in Statement", null); :};
+    | ProcCall SEMI
+    | RETURN Exprs SEMI
+    | WRITE IOArgsList SEMI
+    | WRITERETURN IOArgsList SEMI
+    | READ IOArgsList SEMI
+    | IfStat SEMI
+    | WhileStat SEMI;
 
+/* Chiamate a funzione */
 FunCall ::= IDENTIFIER LPAR Exprs RPAR
-          | IDENTIFIER LPAR RPAR
-          | error {: reportError("Syntax error in Function Call", null); :};
+    | IDENTIFIER LPAR RPAR;
 
+/* Chiamate a procedura */
 ProcCall ::= IDENTIFIER LPAR ProcExprs RPAR
-           | IDENTIFIER LPAR RPAR
-           | error {: reportError("Syntax error in Procedure Call", null); :};
+    | IDENTIFIER LPAR RPAR;
 
-IfStat ::= IF Expr THEN Body Elifs Else ENDIF
-         | error {: reportError("Syntax error in If Statement", null); :};
+/* Definizione delle istruzioni condizionali */
+IfStat ::= IF Expr THEN Body Elifs Else ENDIF;
 
+/* Liste di condizioni ELIF */
 Elifs ::= Elif Elifs
-        | /* empty */
-        | error {: reportError("Syntax error in Elifs", null); :};
+    | /* empty */;
 
-Elif ::= ELIF Expr THEN Body
-       | error {: reportError("Syntax error in Elif", null); :};
+/* Condizione ELIF */
+Elif ::= ELIF Expr THEN Body;
 
+/* Condizione ELSE */
 Else ::= ELSE Body
-       | /* empty */
-       | error {: reportError("Syntax error in Else", null); :};
+    | /* empty */;
 
-WhileStat ::= WHILE Expr DO Body ENDWHILE
-            | error {: reportError("Syntax error in While Statement", null); :};
+/* Definizione delle istruzioni di loop */
+WhileStat ::= WHILE Expr DO Body ENDWHILE;
 
-IOArgs ::= Expr IOArgs
-         | DOLLAR LPAR Expr RPAR IOArgs
-         | /* empty */
-         | error {: reportError("Syntax error in IO Arguments", null); :};
+/* Argomenti di Input/Output */
+IOArgsList ::=  IOArg IOArgsList  /* concatenazione implicita */
+    | DOLLAR LPAR Expr RPAR IOArgsList      /* concatenazione con operatore `PLUS` */
+    | ;
 
+/* Singolo argomento di I/O */
+IOArg ::= IOArg PLUS IOArg /* espressione in output */
+    | IDENTIFIER                 /* identificatore */
+    | STRING_LITERAL;            /* stringa letterale */
+
+/* Parametri di espressioni per le procedure */
 ProcExprs ::= Expr COMMA ProcExprs
-           | REF IDENTIFIER COMMA ProcExprs
-           | Expr
-           | REF IDENTIFIER
-           | error {: reportError("Syntax error in Procedure Expressions", null); :};
+    | REF IDENTIFIER COMMA ProcExprs
+    | Expr
+    | REF IDENTIFIER;
 
+/* Lista di espressioni */
 Exprs ::= Expr COMMA Exprs
-       | Expr
-       | error {: reportError("Syntax error in Expressions", null); :};
+    | Expr;
 
+/* Definizione di espressioni */
 Expr ::= FunCall
-       | REAL_CONST
-       | NUMBER_LITERAL
-       | STRING_LITERAL
-       | IDENTIFIER
-       | TRUE
-       | FALSE
-       | Expr PLUS Expr
-       | Expr MINUS Expr
-       | Expr TIMES Expr
-       | Expr DIV Expr
-       | Expr AND Expr
-       | Expr OR Expr
-       | Expr GT Expr
-       | Expr GE Expr
-       | Expr LT Expr
-       | Expr LE Expr
-       | Expr EQ Expr
-       | Expr NE Expr
-       | LPAR Expr RPAR
-       | MINUS Expr %prec UMINUS
-       | NOT Expr
-       | error {: reportError("Syntax error in Expression", null); :};
+    | REAL_CONST
+    | NUMBER_LITERAL
+    | STRING_LITERAL
+    | IDENTIFIER
+    | TRUE
+    | FALSE
+    | Expr PLUS Expr
+    | Expr MINUS Expr
+    | Expr TIMES Expr
+    | Expr DIV Expr
+    | Expr AND Expr
+    | Expr OR Expr
+    | Expr GT Expr
+    | Expr GE Expr
+    | Expr LT Expr
+    | Expr LE Expr
+    | Expr EQ Expr
+    | Expr NE Expr
+    | LPAR Expr RPAR
+    | MINUS Expr
+    | NOT Expr;

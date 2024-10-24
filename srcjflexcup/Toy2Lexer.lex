@@ -79,7 +79,7 @@ WhiteSpace = {LineTerminator} | [ \t\f]
 <YYINITIAL> "^="          { return symbol(sym.ASSIGN); }  /* Operatore di assegnazione */
 <YYINITIAL> "\\"          { return symbol(sym.ENDVAR); }  /* Simbolo di chiusura var */
 <YYINITIAL> "boolean"     { return symbol(sym.BOOLEAN); }
-<YYINITIAL> "typereturn"  { return symbol(sym.TYPERETURN); }
+<YYINITIAL> "->"          { return symbol(sym.TYPERETURN); }
 <YYINITIAL> "out"         { return symbol(sym.OUT); }
 <YYINITIAL> "-"           { return symbol(sym.UMINUS); }  // Se necessario per UMINUS
 
