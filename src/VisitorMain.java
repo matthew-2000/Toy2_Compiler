@@ -11,7 +11,7 @@ public class VisitorMain {
         parser parser = new parser(new Toy2Lexer(new FileReader("test/test4.txt")));
 
         try {
-            ASTNode root = (ASTNode) parser.debug_parse().value; // Root dell'albero sintattico
+            ASTNode root = (ASTNode) parser.parse().value; // Root dell'albero sintattico
             XMLVisitor visitor = new XMLVisitor();
             visitor.visit(root); // Visita l'albero e genera XML
 

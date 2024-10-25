@@ -284,19 +284,21 @@ ProcParamId ::= IDENTIFIER:id
 /* Definizione del corpo di una funzione o procedura */
 Body ::= VarDecl:decl Body:body
 {:
-    ASTNode bodyNode = (ASTNode) body;
-    bodyNode.addChild((ASTNode) decl);
+    ASTNode bodyNode = new ASTNode("Body", null);         // Crea un nuovo nodo "Body"
+    bodyNode.addChild((ASTNode) decl);                    // Aggiungi dichiarazione al nuovo nodo
+    bodyNode.getChildren().addAll(((ASTNode) body).getChildren()); // Unisci i figli di `body` al nuovo `bodyNode`
     RESULT = bodyNode;
 :}
     | Stat:stat Body:body
 {:
-    ASTNode bodyNode = (ASTNode) body;
-    bodyNode.addChild((ASTNode) stat);
+    ASTNode bodyNode = new ASTNode("Body", null);         // Crea un nuovo nodo "Body"
+    bodyNode.addChild((ASTNode) stat);                    // Aggiungi la nuova istruzione al nuovo nodo
+    bodyNode.getChildren().addAll(((ASTNode) body).getChildren()); // Unisci i figli di `body` al nuovo `bodyNode`
     RESULT = bodyNode;
 :}
     | /* empty */
 {:
-    RESULT = new ASTNode("Body", null);
+    RESULT = new ASTNode("Body", null);                   // Nodo vuoto se non ci sono altre istruzioni
 :};
 
 /* Dichiarazione delle istruzioni */
