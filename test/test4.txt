@@ -2,6 +2,7 @@
 
 proc converti(out gradi : real):
     gradi ^= gradi*9/5 +32;
+    gradi ^= gradi*9/5 +33;
 endproc
 
 proc main():

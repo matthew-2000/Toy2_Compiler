@@ -8,7 +8,7 @@ import java.io.FileReader;
 public class VisitorMain {
     public static void main(String[] args) throws FileNotFoundException {
         // Esegui il parsing del programma Toy2
-        parser parser = new parser(new Toy2Lexer(new FileReader("test/test2.txt")));
+        parser parser = new parser(new Toy2Lexer(new FileReader("test/test4.txt")));
 
         try {
             ASTNode root = (ASTNode) parser.debug_parse().value; // Root dell'albero sintattico
