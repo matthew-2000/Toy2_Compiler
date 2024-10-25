@@ -1,6 +1,9 @@
 package nodes;
 
-public class ProgramNode {
+import visitor.Visitable;
+import visitor.Visitor;
+
+public class ProgramNode implements Visitable {
     private IterWithoutProcedureNode iterWithoutProcedure;
     private ProcedureNode procedure;
     private IterNode iter;
@@ -10,9 +13,10 @@ public class ProgramNode {
         this.procedure = procedure;
         this.iter = iter;
     }
+
     public IterWithoutProcedureNode getIterWithoutProcedure() {
-        return null;
-    };
+        return iterWithoutProcedure;
+    }
 
     public void setIterWithoutProcedure(IterWithoutProcedureNode iterWithoutProcedure) {
         this.iterWithoutProcedure = iterWithoutProcedure;
@@ -32,5 +36,10 @@ public class ProgramNode {
 
     public void setIter(IterNode iter) {
         this.iter = iter;
+    }
+
+    @Override
+    public <T> T accept(Visitor<T> visitor) throws Exception {
+        return visitor.visit(this);
     }
 }

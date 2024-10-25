@@ -1,4 +1,4 @@
-import nodes.ASTNode;
+import nodes.*;
 
 /* Dichiarazione dei terminali */
 terminal VAR, PROC, FUNC, ENDVAR, ENDPROC, ENDFUNC, RETURN, IF, THEN, ELSE, ELIF, ENDIF, WHILE, DO, ENDWHILE;
@@ -26,607 +26,168 @@ precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
 
 /* Definizione del Programma principale */
-Program ::= IterWithoutProcedure:iterNoProc Procedure:proc Iter:it
+Program ::= IterWithoutProcedure:iterWithoutProc Procedure:proc Iter:it
 {:
-    ASTNode programNode = new ASTNode("Program", null);
-    programNode.addChild((ASTNode) iterNoProc);
-    programNode.addChild((ASTNode) proc);
-    programNode.addChild((ASTNode) it);
+    // Esegui il cast ai rispettivi tipi di nodo per evitare errori di tipo
+    ProgramNode programNode = new ProgramNode(
+        (IterWithoutProcedureNode) iterWithoutProc,
+        (ProcedureNode) proc,
+        (IterNode) it
+    );
     RESULT = programNode;
 :};
 
 /* Iterazione senza procedure */
-IterWithoutProcedure ::= VarDecl:decl IterWithoutProcedure:it
-{:
-    ASTNode iterNode = (ASTNode) it;
-    iterNode.addChild((ASTNode) decl);
-    RESULT = iterNode;
-:}
-    | Function:func IterWithoutProcedure:it
-{:
-    ASTNode iterNode = (ASTNode) it;
-    iterNode.addChild((ASTNode) func);
-    RESULT = iterNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("IterWithoutProcedure", null);
-:};
+IterWithoutProcedure ::= VarDecl IterWithoutProcedure
+                       | Function IterWithoutProcedure
+                       | /* empty */;
 
 /* Iterazione con procedure */
-Iter ::= VarDecl:decl Iter:it
-{:
-    ASTNode iterNode = (ASTNode) it;
-    iterNode.addChild((ASTNode) decl);
-    RESULT = iterNode;
-:}
-    | Function:func Iter:it
-{:
-    ASTNode iterNode = (ASTNode) it;
-    iterNode.addChild((ASTNode) func);
-    RESULT = iterNode;
-:}
-    | Procedure:proc Iter:it
-{:
-    ASTNode iterNode = (ASTNode) it;
-    iterNode.addChild((ASTNode) proc);
-    RESULT = iterNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("Iter", null);
-:};
+Iter ::= VarDecl Iter
+       | Function Iter
+       | Procedure Iter
+       | /* empty */;
 
 /* Dichiarazione di variabili */
-VarDecl ::= VAR Decls:decls
-{:
-    ASTNode varDeclNode = new ASTNode("VarDecl", "var");
-    varDeclNode.addChild((ASTNode) decls);
-    RESULT = varDeclNode;
-:};
+VarDecl ::= VAR Decls;
 
 /* Dichiarazioni e costanti */
-Decls ::= Ids:ids COLON Type:type SEMI Decls:decls
-{:
-    ASTNode declNode = new ASTNode("Decls", null);
-    declNode.addChild((ASTNode) ids);
-    declNode.addChild((ASTNode) type);
-    declNode.addChild((ASTNode) decls);
-    RESULT = declNode;
-:}
-    | Ids:ids ASSIGN Consts:consts SEMI Decls:decls
-{:
-    ASTNode declNode = new ASTNode("Decls", null);
-    declNode.addChild((ASTNode) ids);
-    declNode.addChild((ASTNode) consts);
-    declNode.addChild((ASTNode) decls);
-    RESULT = declNode;
-:}
-    | Ids:ids COLON Type:type SEMI ENDVAR
-{:
-    ASTNode declNode = new ASTNode("Decls", null);
-    declNode.addChild((ASTNode) ids);
-    declNode.addChild((ASTNode) type);
-    RESULT = declNode;
-:}
-    | Ids:ids ASSIGN Consts:consts SEMI ENDVAR
-{:
-    ASTNode declNode = new ASTNode("Decls", null);
-    declNode.addChild((ASTNode) ids);
-    declNode.addChild((ASTNode) consts);
-    RESULT = declNode;
-:};
+Decls ::= Ids COLON Type SEMI Decls
+        | Ids ASSIGN Consts SEMI Decls
+        | Ids COLON Type SEMI ENDVAR
+        | Ids ASSIGN Consts SEMI ENDVAR;
 
 /* Lista di identificatori */
-Ids ::= IDENTIFIER:id COMMA Ids:ids
-{:
-    ASTNode idsNode = new ASTNode("Ids", null);
-    idsNode.addChild(new ASTNode("Identifier", id.toString()));
-    idsNode.addChild((ASTNode) ids);
-    RESULT = idsNode;
-:}
-    | IDENTIFIER:id
-{:
-    RESULT = new ASTNode("Ids", id.toString());
-:};
+Ids ::= IDENTIFIER COMMA Ids
+      | IDENTIFIER;
 
 /* Lista di costanti */
-Consts ::= Const:constant COMMA Consts:consts
-{:
-    ASTNode constNode = new ASTNode("Consts", null);
-    constNode.addChild((ASTNode) constant);
-    constNode.addChild((ASTNode) consts);
-    RESULT = constNode;
-:}
-    | Const:constant
-{:
-    RESULT = constant;
-:};
+Consts ::= Const COMMA Consts
+         | Const;
 
 /* Definizione di una costante */
-Const ::= REAL_CONST:real
-{:
-    RESULT = new ASTNode("Const", real.toString());
-:}
-    | NUMBER_LITERAL:num
-{:
-    RESULT = new ASTNode("Const", num.toString());
-:}
-    | STRING_LITERAL:str
-{:
-    RESULT = new ASTNode("Const", str.toString());
-:}
-    | TRUE
-{:
-    RESULT = new ASTNode("Const", "true");
-:}
-    | FALSE
-{:
-    RESULT = new ASTNode("Const", "false");
-:};
+Const ::= REAL_CONST
+        | NUMBER_LITERAL
+        | STRING_LITERAL
+        | TRUE
+        | FALSE;
 
 /* Definizione di un tipo */
 Type ::= REAL
-{:
-    RESULT = new ASTNode("Type", "real");
-:}
-    | INTEGER
-{:
-    RESULT = new ASTNode("Type", "integer");
-:}
-    | STRING
-{:
-    RESULT = new ASTNode("Type", "string");
-:}
-    | BOOLEAN
-{:
-    RESULT = new ASTNode("Type", "boolean");
-:};
+       | INTEGER
+       | STRING
+       | BOOLEAN;
 
 /* Definizione di una funzione */
-Function ::= FUNC IDENTIFIER:id LPAR FuncParams:params RPAR TYPERETURN Types:types COLON Body:body ENDFUNC
-{:
-    ASTNode funcNode = new ASTNode("Function", id.toString());
-    funcNode.addChild((ASTNode) params);
-    funcNode.addChild((ASTNode) types);
-    funcNode.addChild((ASTNode) body);
-    RESULT = funcNode;
-:};
+Function ::= FUNC IDENTIFIER LPAR FuncParams RPAR TYPERETURN Types COLON Body ENDFUNC;
 
 /* Parametri di una funzione */
-FuncParams ::= IDENTIFIER:id COLON Type:type OtherFuncParams:otherParams
-{:
-    ASTNode paramsNode = new ASTNode("FuncParams", null);
-    paramsNode.addChild(new ASTNode("Identifier", id.toString()));
-    paramsNode.addChild((ASTNode) type);
-    paramsNode.addChild((ASTNode) otherParams);
-    RESULT = paramsNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("FuncParams", null);
-:};
+FuncParams ::= IDENTIFIER COLON Type OtherFuncParams
+             | /* empty */;
 
 /* Altri parametri di una funzione */
-OtherFuncParams ::= COMMA IDENTIFIER:id COLON Type:type OtherFuncParams:otherParams
-{:
-    ASTNode otherParamsNode = new ASTNode("OtherFuncParams", null);
-    otherParamsNode.addChild(new ASTNode("Identifier", id.toString()));
-    otherParamsNode.addChild((ASTNode) type);
-    otherParamsNode.addChild((ASTNode) otherParams);
-    RESULT = otherParamsNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("OtherFuncParams", null);
-:};
+OtherFuncParams ::= COMMA IDENTIFIER COLON Type OtherFuncParams
+                  | /* empty */;
 
 /* Definizione di una lista di tipi */
-Types ::= Type:type COMMA Types:types
-{:
-    ASTNode typesNode = new ASTNode("Types", null);
-    typesNode.addChild((ASTNode) type);
-    typesNode.addChild((ASTNode) types);
-    RESULT = typesNode;
-:}
-    | Type:type
-{:
-    RESULT = type;
-:};
+Types ::= Type COMMA Types
+        | Type;
 
 /* Definizione di una procedura */
-Procedure ::= PROC IDENTIFIER:id LPAR ProcParams:params RPAR COLON Body:body ENDPROC
-{:
-    ASTNode procNode = new ASTNode("Procedure", id.toString());
-    procNode.addChild((ASTNode) params);
-    procNode.addChild((ASTNode) body);
-    RESULT = procNode;
-:};
+Procedure ::= PROC IDENTIFIER LPAR ProcParams RPAR COLON Body ENDPROC;
 
 /* Parametri di una procedura */
-ProcParams ::= ProcParamId:procId COLON Type:type OtherProcParams:otherParams
-{:
-    ASTNode procParamsNode = new ASTNode("ProcParams", null);
-    procParamsNode.addChild((ASTNode) procId);
-    procParamsNode.addChild((ASTNode) type);
-    procParamsNode.addChild((ASTNode) otherParams);
-    RESULT = procParamsNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("ProcParams", null);
-:};
+ProcParams ::= ProcParamId COLON Type OtherProcParams
+             | /* empty */;
 
 /* Altri parametri di una procedura */
-OtherProcParams ::= COMMA ProcParamId:procId COLON Type:type OtherProcParams:otherParams
-{:
-    ASTNode otherProcParamsNode = new ASTNode("OtherProcParams", null);
-    otherProcParamsNode.addChild((ASTNode) procId);
-    otherProcParamsNode.addChild((ASTNode) type);
-    otherProcParamsNode.addChild((ASTNode) otherParams);
-    RESULT = otherProcParamsNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("OtherProcParams", null);
-:};
+OtherProcParams ::= COMMA ProcParamId COLON Type OtherProcParams
+                  | /* empty */;
 
 /* Definizione di un parametro di procedura */
-ProcParamId ::= IDENTIFIER:id
-{:
-    RESULT = new ASTNode("ProcParamId", id.toString());
-:}
-    | OUT IDENTIFIER:id
-{:
-    RESULT = new ASTNode("ProcParamId", "out " + id.toString());
-:};
+ProcParamId ::= IDENTIFIER
+              | OUT IDENTIFIER;
 
 /* Definizione del corpo di una funzione o procedura */
-Body ::= VarDecl:decl Body:body
-{:
-    ASTNode bodyNode = new ASTNode("Body", null);         // Crea un nuovo nodo "Body"
-    bodyNode.addChild((ASTNode) decl);                    // Aggiungi dichiarazione al nuovo nodo
-    bodyNode.getChildren().addAll(((ASTNode) body).getChildren()); // Unisci i figli di `body` al nuovo `bodyNode`
-    RESULT = bodyNode;
-:}
-    | Stat:stat Body:body
-{:
-    ASTNode bodyNode = new ASTNode("Body", null);         // Crea un nuovo nodo "Body"
-    bodyNode.addChild((ASTNode) stat);                    // Aggiungi la nuova istruzione al nuovo nodo
-    bodyNode.getChildren().addAll(((ASTNode) body).getChildren()); // Unisci i figli di `body` al nuovo `bodyNode`
-    RESULT = bodyNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("Body", null);                   // Nodo vuoto se non ci sono altre istruzioni
-:};
+Body ::= VarDecl Body
+       | Stat Body
+       | /* empty */;
 
 /* Dichiarazione delle istruzioni */
-Stat ::= Ids:ids ASSIGN Exprs:exprs SEMI
-{:
-    ASTNode statNode = new ASTNode("StatAssign", null);
-    statNode.addChild((ASTNode) ids);
-    statNode.addChild((ASTNode) exprs);
-    RESULT = statNode;
-:}
-    | ProcCall:procCall SEMI
-{:
-    RESULT = procCall;
-:}
-    | RETURN Exprs:exprs SEMI
-{:
-    ASTNode statNode = new ASTNode("Return", null);
-    statNode.addChild((ASTNode) exprs);
-    RESULT = statNode;
-:}
-    | WRITE IOArgsList:args SEMI
-{:
-    ASTNode statNode = new ASTNode("Write", null);
-    statNode.addChild((ASTNode) args);
-    RESULT = statNode;
-:}
-    | WRITERETURN IOArgsList:args SEMI
-{:
-    ASTNode statNode = new ASTNode("WriteReturn", null);
-    statNode.addChild((ASTNode) args);
-    RESULT = statNode;
-:}
-    | READ IOArgsList:args SEMI
-{:
-    ASTNode statNode = new ASTNode("Read", null);
-    statNode.addChild((ASTNode) args);
-    RESULT = statNode;
-:}
-    | IfStat:ifStat SEMI
-{:
-    RESULT = ifStat;
-:}
-    | WhileStat:whileStat SEMI
-{:
-    RESULT = whileStat;
-:};
+Stat ::= Ids ASSIGN Exprs SEMI
+       | ProcCall SEMI
+       | RETURN Exprs SEMI
+       | WRITE IOArgsList SEMI
+       | WRITERETURN IOArgsList SEMI
+       | READ IOArgsList SEMI
+       | IfStat SEMI
+       | WhileStat SEMI;
 
 /* Chiamate a funzione */
-FunCall ::= IDENTIFIER:id LPAR Exprs:exprs RPAR
-{:
-    ASTNode funcCallNode = new ASTNode("FunCall", id.toString());
-    funcCallNode.addChild((ASTNode) exprs);
-    RESULT = funcCallNode;
-:}
-    | IDENTIFIER:id LPAR RPAR
-{:
-    RESULT = new ASTNode("FunCall", id.toString());
-:};
+FunCall ::= IDENTIFIER LPAR Exprs RPAR
+          | IDENTIFIER LPAR RPAR;
 
 /* Chiamate a procedura */
-ProcCall ::= IDENTIFIER:id LPAR ProcExprs:procExprs RPAR
-{:
-    ASTNode procCallNode = new ASTNode("ProcCall", id.toString());
-    procCallNode.addChild((ASTNode) procExprs);
-    RESULT = procCallNode;
-:}
-    | IDENTIFIER:id LPAR RPAR
-{:
-    RESULT = new ASTNode("ProcCall", id.toString());
-:};
+ProcCall ::= IDENTIFIER LPAR ProcExprs RPAR
+           | IDENTIFIER LPAR RPAR;
 
 /* Definizione delle istruzioni condizionali */
-IfStat ::= IF Expr:cond THEN Body:body Elifs:elifs Else:elsePart ENDIF
-{:
-    ASTNode ifStatNode = new ASTNode("IfStat", null);
-    ifStatNode.addChild((ASTNode) cond);
-    ifStatNode.addChild((ASTNode) body);
-    ifStatNode.addChild((ASTNode) elifs);
-    ifStatNode.addChild((ASTNode) elsePart);
-    RESULT = ifStatNode;
-:};
+IfStat ::= IF Expr THEN Body Elifs Else ENDIF;
 
 /* Liste di condizioni ELIF */
-Elifs ::= Elif:elif Elifs:elifs
-{:
-    ASTNode elifsNode = (ASTNode) elifs;
-    elifsNode.addChild((ASTNode) elif);
-    RESULT = elifsNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("Elifs", null);
-:};
+Elifs ::= Elif Elifs
+        | /* empty */;
 
 /* Condizione ELIF */
-Elif ::= ELIF Expr:cond THEN Body:body
-{:
-    ASTNode elifNode = new ASTNode("Elif", null);
-    elifNode.addChild((ASTNode) cond);
-    elifNode.addChild((ASTNode) body);
-    RESULT = elifNode;
-:};
+Elif ::= ELIF Expr THEN Body;
 
 /* Condizione ELSE */
-Else ::= ELSE Body:body
-{:
-    ASTNode elseNode = new ASTNode("Else", null);
-    elseNode.addChild((ASTNode) body);
-    RESULT = elseNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("Else", null);
-:};
+Else ::= ELSE Body
+       | /* empty */;
 
 /* Definizione delle istruzioni di loop */
-WhileStat ::= WHILE Expr:cond DO Body:body ENDWHILE
-{:
-    ASTNode whileNode = new ASTNode("WhileStat", null);
-    whileNode.addChild((ASTNode) cond);
-    whileNode.addChild((ASTNode) body);
-    RESULT = whileNode;
-:};
+WhileStat ::= WHILE Expr DO Body ENDWHILE;
 
 /* Argomenti di Input/Output */
-IOArgsList ::= IOArg:arg IOArgsList:argsList
-{:
-    ASTNode argsNode = (ASTNode) argsList;
-    argsNode.addChild((ASTNode) arg);
-    RESULT = argsNode;
-:}
-    | DOLLAR LPAR Expr:expr RPAR IOArgsList:argsList
-{:
-    ASTNode argsNode = (ASTNode) argsList;
-    ASTNode dollarExprNode = new ASTNode("DollarExpr", null);
-    dollarExprNode.addChild((ASTNode) expr);
-    argsNode.addChild(dollarExprNode);
-    RESULT = argsNode;
-:}
-    | /* empty */
-{:
-    RESULT = new ASTNode("IOArgsList", null);
-:};
+IOArgsList ::= IOArg IOArgsList
+             | DOLLAR LPAR Expr RPAR IOArgsList
+             | /* empty */;
 
 /* Singolo argomento di I/O */
-IOArg ::= IOArg:arg1 PLUS IOArg:arg2
-{:
-    ASTNode plusNode = new ASTNode("IOArgPlus", null);
-    plusNode.addChild((ASTNode) arg1);
-    plusNode.addChild((ASTNode) arg2);
-    RESULT = plusNode;
-:}
-    | IDENTIFIER:id
-{:
-    RESULT = new ASTNode("IOArg", id.toString());
-:}
-    | STRING_LITERAL:str
-{:
-    RESULT = new ASTNode("IOArg", str.toString());
-:};
+IOArg ::= IOArg PLUS IOArg
+        | IDENTIFIER
+        | STRING_LITERAL;
 
 /* Parametri di espressioni per le procedure */
-ProcExprs ::= Expr:expr COMMA ProcExprs:procExprs
-{:
-    ASTNode procExprsNode = (ASTNode) procExprs;
-    procExprsNode.addChild((ASTNode) expr);
-    RESULT = procExprsNode;
-:}
-    | REF IDENTIFIER:id COMMA ProcExprs:procExprs
-{:
-    ASTNode procExprsNode = (ASTNode) procExprs;
-    ASTNode refNode = new ASTNode("Ref", id.toString());
-    procExprsNode.addChild(refNode);
-    RESULT = procExprsNode;
-:}
-    | Expr:expr
-{:
-    ASTNode procExprs = new ASTNode("ProcExprs", null);
-    procExprs.addChild((ASTNode) expr);
-    RESULT = procExprs;
-:}
-    | REF IDENTIFIER:id
-{:
-    ASTNode procExprs = new ASTNode("ProcExprs", null);
-    procExprs.addChild(new ASTNode("Ref", id.toString()));
-    RESULT = procExprs;
-:};
+ProcExprs ::= Expr COMMA ProcExprs
+            | REF IDENTIFIER COMMA ProcExprs
+            | Expr
+            | REF IDENTIFIER;
 
 /* Lista di espressioni */
-Exprs ::= Expr:expr COMMA Exprs:exprsList
-{:
-    ASTNode exprsNode = (ASTNode) exprsList;
-    exprsNode.addChild((ASTNode) expr);
-    RESULT = exprsNode;
-:}
-    | Expr:expr
-{:
-    ASTNode exprs = new ASTNode("Exprs", null);
-    exprs.addChild((ASTNode) expr);
-    RESULT = exprs;
-:};
+Exprs ::= Expr COMMA Exprs
+        | Expr;
 
 /* Definizione di espressioni */
-Expr ::= FunCall:funcCall
-{:
-    RESULT = funcCall;
-:}
-    | REAL_CONST:real
-{:
-    RESULT = new ASTNode("RealConst", real.toString());
-:}
-    | NUMBER_LITERAL:num
-{:
-    RESULT = new ASTNode("NumberLiteral", num.toString());
-:}
-    | STRING_LITERAL:str
-{:
-    RESULT = new ASTNode("StringLiteral", str.toString());
-:}
-    | IDENTIFIER:id
-{:
-    RESULT = new ASTNode("Identifier", id.toString());
-:}
-    | TRUE
-{:
-    RESULT = new ASTNode("Boolean", "true");
-:}
-    | FALSE
-{:
-    RESULT = new ASTNode("Boolean", "false");
-:}
-    | Expr:l PLUS Expr:r
-{:
-    ASTNode plusNode = new ASTNode("Plus", null);
-    plusNode.addChild((ASTNode) l);
-    plusNode.addChild((ASTNode) r);
-    RESULT = plusNode;
-:}
-    | Expr:l MINUS Expr:r
-{:
-    ASTNode minusNode = new ASTNode("Minus", null);
-    minusNode.addChild((ASTNode) l);
-    minusNode.addChild((ASTNode) r);
-    RESULT = minusNode;
-:}
-    | Expr:l TIMES Expr:r
-{:
-    ASTNode timesNode = new ASTNode("Times", null);
-    timesNode.addChild((ASTNode) l);
-    timesNode.addChild((ASTNode) r);
-    RESULT = timesNode;
-:}
-    | Expr:l DIV Expr:r
-{:
-    ASTNode divNode = new ASTNode("Div", null);
-    divNode.addChild((ASTNode) l);
-    divNode.addChild((ASTNode) r);
-    RESULT = divNode;
-:}
-    | Expr:l AND Expr:r
-{:
-    ASTNode andNode = new ASTNode("And", null);
-    andNode.addChild((ASTNode) l);
-    andNode.addChild((ASTNode) r);
-    RESULT = andNode;
-:}
-    | Expr:l OR Expr:r
-{:
-    ASTNode orNode = new ASTNode("Or", null);
-    orNode.addChild((ASTNode) l);
-    orNode.addChild((ASTNode) r);
-    RESULT = orNode;
-:}
-    | Expr:l GT Expr:r
-{:
-    ASTNode gtNode = new ASTNode("GreaterThan", null);
-    gtNode.addChild((ASTNode) l);
-    gtNode.addChild((ASTNode) r);
-    RESULT = gtNode;
-:}
-    | Expr:l GE Expr:r
-{:
-    ASTNode geNode = new ASTNode("GreaterOrEqual", null);
-    geNode.addChild((ASTNode) l);
-    geNode.addChild((ASTNode) r);
-    RESULT = geNode;
-:}
-    | Expr:l LT Expr:r
-{:
-    ASTNode ltNode = new ASTNode("LessThan", null);
-    ltNode.addChild((ASTNode) l);
-    ltNode.addChild((ASTNode) r);
-    RESULT = ltNode;
-:}
-    | Expr:l LE Expr:r
-{:
-    ASTNode leNode = new ASTNode("LessOrEqual", null);
-    leNode.addChild((ASTNode) l);
-    leNode.addChild((ASTNode) r);
-    RESULT = leNode;
-:}
-    | Expr:l EQ Expr:r
-{:
-    ASTNode eqNode = new ASTNode("Equal", null);
-    eqNode.addChild((ASTNode) l);
-    eqNode.addChild((ASTNode) r);
-    RESULT = eqNode;
-:}
-    | Expr:l NE Expr:r
-{:
-    ASTNode neNode = new ASTNode("NotEqual", null);
-    neNode.addChild((ASTNode) l);
-    neNode.addChild((ASTNode) r);
-    RESULT = neNode;
-:}
-    | LPAR Expr:expr RPAR
-{:
-    RESULT = expr;
-:}
-    | MINUS Expr:expr
-{:
-    ASTNode uminusNode = new ASTNode("UnaryMinus", null);
-    uminusNode.addChild((ASTNode) expr);
-    RESULT = uminusNode;
-:}
-    | NOT Expr:expr
-{:
-    ASTNode notNode = new ASTNode("Not", null);
-    notNode.addChild((ASTNode) expr);
-    RESULT = notNode;
-:};
+Expr ::= FunCall
+       | REAL_CONST
+       | NUMBER_LITERAL
+       | STRING_LITERAL
+       | IDENTIFIER
+       | TRUE
+       | FALSE
+       | Expr PLUS Expr
+       | Expr MINUS Expr
+       | Expr TIMES Expr
+       | Expr DIV Expr
+       | Expr AND Expr
+       | Expr OR Expr
+       | Expr GT Expr
+       | Expr GE Expr
+       | Expr LT Expr
+       | Expr LE Expr
+       | Expr EQ Expr
+       | Expr NE Expr
+       | LPAR Expr RPAR
+       | MINUS Expr
+       | NOT Expr;
