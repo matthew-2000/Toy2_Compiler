@@ -1,4 +1,6 @@
 import nodes.*;
+import visitor.Visitable;
+import java.util.*;
 
 /* Dichiarazione dei terminali */
 terminal VAR, PROC, FUNC, ENDVAR, ENDPROC, ENDFUNC, RETURN, IF, THEN, ELSE, ELIF, ENDIF, WHILE, DO, ENDWHILE;
@@ -37,16 +39,75 @@ Program ::= IterWithoutProcedure:iterWithoutProc Procedure:proc Iter:it
     RESULT = programNode;
 :};
 
-/* Iterazione senza procedure */
-IterWithoutProcedure ::= VarDecl IterWithoutProcedure
-                       | Function IterWithoutProcedure
-                       | /* empty */;
+IterWithoutProcedure ::= VarDecl:varDecl IterWithoutProcedure:nextIterWithoutProc
+{:
+    // Accumula il nodo VarDecl in una lista insieme ai nodi successivi
+    List<Visitable> items = new ArrayList<>();
+    items.add((Visitable) varDecl);
+    if (nextIterWithoutProc != null) {
+        items.addAll(((IterWithoutProcedureNode) nextIterWithoutProc).getItems());
+    }
+    IterWithoutProcedureNode iterNode = new IterWithoutProcedureNode(items);
+    RESULT = iterNode;
+:}
+| Function:function IterWithoutProcedure:nextIterWithoutProc
+{:
+    // Accumula il nodo Function in una lista insieme ai nodi successivi
+    List<Visitable> items = new ArrayList<>();
+    items.add((Visitable) function);
+    if (nextIterWithoutProc != null) {
+        items.addAll(((IterWithoutProcedureNode) nextIterWithoutProc).getItems());
+    }
+    IterWithoutProcedureNode iterNode = new IterWithoutProcedureNode(items);
+    RESULT = iterNode;
+:}
+| /* empty */
+{:
+    // Nodo vuoto con lista vuota per IterWithoutProcedure
+    IterWithoutProcedureNode iterNode = new IterWithoutProcedureNode(new ArrayList<>());
+    RESULT = iterNode;
+:};
 
 /* Iterazione con procedure */
-Iter ::= VarDecl Iter
-       | Function Iter
-       | Procedure Iter
-       | /* empty */;
+Iter ::= VarDecl:varDecl Iter:nextIter
+{:
+    // Accumula il nodo VarDecl in una lista insieme ai nodi successivi
+    List<Visitable> items = new ArrayList<>();
+    items.add((Visitable) varDecl);
+    if (nextIter != null) {
+        items.addAll(((IterNode) nextIter).getItems());
+    }
+    IterNode iterNode = new IterNode(items);
+    RESULT = iterNode;
+:}
+| Function:function Iter:nextIter
+{:
+    // Accumula il nodo Function in una lista insieme ai nodi successivi
+    List<Visitable> items = new ArrayList<>();
+    items.add((Visitable) function);
+    if (nextIter != null) {
+        items.addAll(((IterNode) nextIter).getItems());
+    }
+    IterNode iterNode = new IterNode(items);
+    RESULT = iterNode;
+:}
+| Procedure:procedure Iter:nextIter
+{:
+    // Accumula il nodo Procedure in una lista insieme ai nodi successivi
+    List<Visitable> items = new ArrayList<>();
+    items.add((Visitable) procedure);
+    if (nextIter != null) {
+        items.addAll(((IterNode) nextIter).getItems());
+    }
+    IterNode iterNode = new IterNode(items);
+    RESULT = iterNode;
+:}
+| /* empty */
+{:
+    // Nodo vuoto con lista vuota per Iter
+    IterNode iterNode = new IterNode(new ArrayList<>());
+    RESULT = iterNode;
+:};
 
 /* Dichiarazione di variabili */
 VarDecl ::= VAR Decls;
