@@ -13,6 +13,7 @@ public interface Visitor<T> {
     T visit(ProcedureNode node) throws SemanticException;
     T visit(FuncParamsNode node) throws SemanticException;
     T visit(ProcParamsNode node) throws SemanticException;
+    T visit(ProcParamIdNode node) throws SemanticException;
     T visit(OtherFuncParamsNode node) throws SemanticException; // Nuovo metodo
     T visit(OtherProcParamsNode node) throws SemanticException; // Nuovo metodo
 
