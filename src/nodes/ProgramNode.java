@@ -2,6 +2,7 @@ package nodes;
 
 import visitor.Visitable;
 import visitor.Visitor;
+import visitor.exception.SemanticException;
 
 public class ProgramNode implements Visitable {
     private IterWithoutProcedureNode iterWithoutProcedure;
@@ -39,7 +40,7 @@ public class ProgramNode implements Visitable {
     }
 
     @Override
-    public <T> T accept(Visitor<T> visitor) throws Exception {
+    public <T> T accept(Visitor<T> visitor) throws SemanticException {
         return visitor.visit(this);
     }
 }
