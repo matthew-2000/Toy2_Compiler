@@ -2,13 +2,16 @@ import java.io.FileReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java_cup.runtime.Symbol;
+import nodes.ProgramNode;
 import unisa.compilatori.parser;
 import unisa.compilatori.sym;
+import visitor.ScopeCheckingVisitor;
+import visitor.exception.SemanticException;
 
 public class Main {
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test2.txt";
+        String filePath = "test/test1.txt";
 
         // Tentiamo di aprire il file di input
         try {
@@ -33,9 +36,11 @@ public class Main {
 
             // Esecuzione del parsing
             System.out.println("\n=== Avvio del parsing ===");
-            Symbol result = parser.debug_parse();
-            System.out.println(result.toString());
+            ProgramNode result = (ProgramNode) parser.parse().value;
             System.out.println("=== Parsing completato con successo! ===");
+
+            ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor();
+            scopeCheckingVisitor.visit(result);
 
         } catch (FileNotFoundException e) {
             System.err.println("Errore: il file " + filePath + " non è stato trovato.");
@@ -44,6 +49,8 @@ public class Main {
         } catch (Exception e) {
             System.err.println("Errore durante l'analisi del file: " + e.getMessage());
             e.printStackTrace();
+        } catch (SemanticException e) {
+            System.err.println("Errore semantico: " + e.getMessage());
         }
     }
 

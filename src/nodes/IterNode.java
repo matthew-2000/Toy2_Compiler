@@ -3,6 +3,8 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class IterNode implements Visitable {
@@ -10,6 +12,16 @@ public class IterNode implements Visitable {
 
     public IterNode(List<Visitable> items) {
         this.items = items;
+    }
+
+    // Costruttore per inizializzare una lista vuota
+    public IterNode() {
+        this.items = new ArrayList<>();
+    }
+
+    // Metodo per aggiungere singoli elementi, adatto alle regole CUP
+    public void addItem(Visitable item) {
+        items.add(item);
     }
 
     public List<Visitable> getItems() {

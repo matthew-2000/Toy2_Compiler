@@ -11,6 +11,7 @@ public class ExprNode implements Visitable {
     private ExprNode singleOperand;  // Operando singolo per operazioni unarie
     private String literalType;      // Tipo del literal, se si tratta di un valore costante (ad es. "INTEGER", "REAL")
     private String identifier;       // Identificatore se si tratta di una variabile
+    private boolean isIdentifier;
 
     // Costruttore per operatori binari
     public ExprNode(String operator, ExprNode left, ExprNode right) {
@@ -33,6 +34,7 @@ public class ExprNode implements Visitable {
     // Costruttore per identificatori
     public ExprNode(String identifier, boolean isIdentifier) {
         this.identifier = identifier;
+        this.isIdentifier = isIdentifier;
     }
 
     public String getOperator() {
@@ -57,6 +59,10 @@ public class ExprNode implements Visitable {
 
     public String getIdentifier() {
         return identifier;
+    }
+
+    public boolean isIdentifier() {
+        return isIdentifier;
     }
 
     @Override

@@ -30,6 +30,8 @@ public class ScopeCheckingVisitor implements Visitor {
         }
 
         symbolTableManager.exitScope();  // Esce dallo scope globale
+        System.out.println("Visited: " + node);       
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -50,6 +52,8 @@ public class ScopeCheckingVisitor implements Visitor {
             node.getConsts().accept(this);  // Assicurati che i tipi delle costanti siano compatibili
         }
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -67,6 +71,8 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getReturnType().accept(this);
 
         symbolTableManager.exitScope();
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -83,6 +89,8 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getBody().accept(this);
 
         symbolTableManager.exitScope();
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -101,6 +109,8 @@ public class ScopeCheckingVisitor implements Visitor {
             node.getOtherParams().accept(this);
         }
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -119,6 +129,8 @@ public class ScopeCheckingVisitor implements Visitor {
             node.getOtherParams().accept(this);
         }
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -132,6 +144,8 @@ public class ScopeCheckingVisitor implements Visitor {
             throw new SemanticException("Dichiarazione multipla del parametro '" + paramName + "'");
         }
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -140,6 +154,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (FuncParamsNode param : node.getAdditionalParams()) {
             param.accept(this);
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -148,6 +164,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (ProcParamsNode param : node.getAdditionalParams()) {
             param.accept(this);
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -167,6 +185,7 @@ public class ScopeCheckingVisitor implements Visitor {
             throw new SemanticException("Tipo di costante non riconosciuto: " + value);
         }
 
+        System.out.println("Visited: " + node);
         return null;
     }
 
@@ -180,6 +199,8 @@ public class ScopeCheckingVisitor implements Visitor {
             throw new SemanticException("Tipo non riconosciuto: " + type);
         }
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -190,6 +211,8 @@ public class ScopeCheckingVisitor implements Visitor {
                 throw new SemanticException("Identificatore non dichiarato: " + identifier);
             }
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -198,6 +221,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (TypeNode typeNode : node.getTypes()) {
             typeNode.accept(this);  // Visita ogni tipo per confermarne la validità
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -303,6 +328,8 @@ public class ScopeCheckingVisitor implements Visitor {
             }
         }
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -335,12 +362,14 @@ public class ScopeCheckingVisitor implements Visitor {
                 throw new SemanticException("Tipo di argomento non corrispondente per la procedura '" + procedureName + "'. Atteso: " + expectedType + ", Trovato: " + actualType);
             }
 
-//            // Verifica parametro OUT
-//            if (isOutParam && !(argument instanceof IdsNode)) {
-//                throw new SemanticException("Parametro OUT deve essere passato per riferimento nella procedura '" + procedureName + "'");
-//            }
+            // Verifica parametro OUT
+            if (isOutParam && !(argument.isIdentifier())) {
+                throw new SemanticException("Parametro OUT deve essere passato per riferimento nella procedura '" + procedureName + "'");
+            }
         }
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -367,6 +396,8 @@ public class ScopeCheckingVisitor implements Visitor {
             node.getElseNode().accept(this);
         }
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -383,6 +414,8 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -393,6 +426,8 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -401,6 +436,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (ElifNode elif : node.getElifBlocks()) {
             elif.accept(this);
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -417,6 +454,8 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -429,6 +468,8 @@ public class ScopeCheckingVisitor implements Visitor {
         }
 
         symbolTableManager.exitScope();
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -448,6 +489,8 @@ public class ScopeCheckingVisitor implements Visitor {
 
             // Altri tipi di istruzioni, come RETURN, WRITE, READ, ecc.
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -456,6 +499,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (IOArgNode ioArg : node.getIoArgs()) {
             ioArg.accept(this);
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -470,6 +515,8 @@ public class ScopeCheckingVisitor implements Visitor {
         }
 
         // Se è un literal, può essere direttamente accettato
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -478,6 +525,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (Visitable item : node.getItems()) {
             item.accept(this);
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -486,6 +535,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (Visitable item : node.getItems()) {
             item.accept(this);
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -494,6 +545,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (VarDeclNode declNode : node.getDeclarations()) {
             declNode.accept(this);  // Visita ciascuna dichiarazione per aggiungerla alla tabella dei simboli
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -502,6 +555,8 @@ public class ScopeCheckingVisitor implements Visitor {
         for (ExprNode expr : node.getExpressions()) {
             expr.accept(this);
         }
+
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -510,6 +565,7 @@ public class ScopeCheckingVisitor implements Visitor {
         for (ConstNode constant : node.getConstants()) {
             constant.accept(this);
         }
+        System.out.println("Visited: " + node);       
         return null;
     }
 
@@ -523,22 +579,23 @@ public class ScopeCheckingVisitor implements Visitor {
             boolean isRef = isRefFlags.get(i);
 
             if (isRef) {
-//                // Se è un parametro REF, deve essere un identificatore
-//                if (!(argument instanceof IdsNode)) {
-//                    throw new SemanticException("Parametro REF deve essere un identificatore");
-//                }
-//                // Verifica che l'identificatore sia dichiarato
-//                String identifier = ((IdsNode) argument).getIdentifiers().get(0);
-//                Symbol symbol = symbolTableManager.lookup(identifier);
-//                if (symbol == null) {
-//                    throw new SemanticException("Parametro REF non dichiarato: " + identifier);
-//                }
+                // Se è un parametro REF, deve essere un identificatore
+                if (!(argument.isIdentifier())) {
+                    throw new SemanticException("Parametro REF deve essere un identificatore");
+                }
+                // Verifica che l'identificatore sia dichiarato
+                String identifier = argument.getIdentifier();
+                Symbol symbol = symbolTableManager.lookup(identifier);
+                if (symbol == null) {
+                    throw new SemanticException("Parametro REF non dichiarato: " + identifier);
+                }
             } else {
                 // Se non è REF, può essere qualsiasi espressione, controlla il tipo
                 argument.accept(this);
             }
         }
 
+        System.out.println("Visited: " + node);       
         return null;
     }
 
