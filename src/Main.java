@@ -36,13 +36,24 @@ public class Main {
 
             // Esecuzione del parsing
             System.out.println("\n=== Avvio del parsing ===");
-            ProgramNode result = (ProgramNode) parser.debug_parse().value;
+            ProgramNode programNode = (ProgramNode) parser.parse().value;
             System.out.println("=== Parsing completato con successo! ===");
+
+            // Creazione del visitor per lo scope checking
+            ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor();
+
+            // Esecuzione del visitor sul nodo del programma
+            System.out.println("\n=== Avvio dello scope checking ===");
+            programNode.accept(scopeCheckingVisitor);
+            System.out.println("=== Scope checking completato con successo! ===");
 
         } catch (FileNotFoundException e) {
             System.err.println("Errore: il file " + filePath + " non è stato trovato.");
         } catch (IOException e) {
             System.err.println("Errore durante la lettura del file: " + e.getMessage());
+        } catch (SemanticException e) {
+            System.err.println("Errore semantico: " + e.getMessage());
+            e.printStackTrace();
         } catch (Exception e) {
             System.err.println("Errore durante l'analisi del file: " + e.getMessage());
             e.printStackTrace();
@@ -66,6 +77,7 @@ public class Main {
             case sym.ENDWHILE -> "ENDWHILE";
             case sym.RETURN -> "RETURN";
             case sym.NUMBER_LITERAL -> "NUMBER_LITERAL";
+            case sym.REAL_CONST -> "REAL_CONST";
             case sym.STRING_LITERAL -> "STRING_LITERAL";
             case sym.TRUE -> "TRUE";
             case sym.FALSE -> "FALSE";

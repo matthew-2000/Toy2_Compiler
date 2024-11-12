@@ -6,7 +6,7 @@ import visitor.Visitor;
 import visitor.exception.SemanticException;
 import java.util.List;
 
-public class FunCallNode implements Visitable {
+public class FunCallNode implements ExprNode {
     private String functionName;
     private List<ExprNode> arguments;
 

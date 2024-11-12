@@ -1,5 +1,6 @@
 import nodes.*;
 import nodes.statNodes.*;
+import nodes.expr.*;
 import visitor.Visitable;
 import java.util.*;
 
@@ -205,12 +206,12 @@ Consts ::= Const:constant COMMA Consts:nextConsts
 /* Definizione di una costante */
 Const ::= REAL_CONST:realConst
 {:
-    ConstNode constNode = new ConstNode((Double) realConst);
+    ConstNode constNode = new ConstNode(Double.parseDouble((String) realConst));
     RESULT = constNode;
 :}
 | NUMBER_LITERAL:number
 {:
-    ConstNode constNode = new ConstNode((Integer) number);
+    ConstNode constNode = new ConstNode(Integer.parseInt((String) number));
     RESULT = constNode;
 :}
 | STRING_LITERAL:stringLiteral
@@ -565,28 +566,28 @@ ProcExprs ::= Expr:expr COMMA ProcExprs:nextExprs
 {:
     // Crea una lista di parametri di espressione
     List<ProcExprNode> exprs = new ArrayList<>();
-    exprs.add(new ProcExprNode(expr, false));
-    exprs.addAll(nextExprs);
+    exprs.add(new ProcExprNode((ExprNode) expr, false));
+    exprs.addAll((Collection<? extends ProcExprNode>) nextExprs);
     RESULT = exprs;
 :}
 | REF IDENTIFIER:id COMMA ProcExprs:nextExprs
 {:
     // Crea una lista di parametri di riferimento
     List<ProcExprNode> exprs = new ArrayList<>();
-    exprs.add(new ProcExprNode(new IdentifierNode(id), true));
-    exprs.addAll(nextExprs);
+    exprs.add(new ProcExprNode(new IdentifierNode((String) id), true));
+    exprs.addAll((Collection<? extends ProcExprNode>) nextExprs);
     RESULT = exprs;
 :}
 | Expr:expr
 {:
     List<ProcExprNode> exprs = new ArrayList<>();
-    exprs.add(new ProcExprNode(expr, false));
+    exprs.add(new ProcExprNode((ExprNode) expr, false));
     RESULT = exprs;
 :}
 | REF IDENTIFIER:id
 {:
     List<ProcExprNode> exprs = new ArrayList<>();
-    exprs.add(new ProcExprNode(new IdentifierNode(id), true));
+    exprs.add(new ProcExprNode(new IdentifierNode((String) id), true));
     RESULT = exprs;
 :};
 
@@ -595,14 +596,14 @@ Exprs ::= Expr:expr COMMA Exprs:nextExprs
 {:
     // Crea una lista di espressioni
     List<ExprNode> exprs = new ArrayList<>();
-    exprs.add(expr);
-    exprs.addAll(nextExprs);
+    exprs.add((ExprNode) expr);
+    exprs.addAll((Collection<? extends ExprNode>) nextExprs);
     RESULT = exprs;
 :}
 | Expr:expr
 {:
     List<ExprNode> exprs = new ArrayList<>();
-    exprs.add(expr);
+    exprs.add((ExprNode) expr);
     RESULT = exprs;
 :};
 
@@ -613,19 +614,19 @@ Expr ::= FunCall:funCall
 :}
 | REAL_CONST:realConst
 {:
-    RESULT = new RealConstNode(realConst);
+    RESULT = new RealConstNode(Double.parseDouble((String) realConst));
 :}
 | NUMBER_LITERAL:number
 {:
-    RESULT = new IntConstNode(number);
+    RESULT = new IntConstNode(Integer.parseInt((String) number));
 :}
 | STRING_LITERAL:stringLiteral
 {:
-    RESULT = new StringConstNode(stringLiteral);
+    RESULT = new StringConstNode((String) stringLiteral);
 :}
 | IDENTIFIER:id
 {:
-    RESULT = new IdentifierNode(id);
+    RESULT = new IdentifierNode((String) id);
 :}
 | TRUE
 {:
@@ -637,51 +638,51 @@ Expr ::= FunCall:funCall
 :}
 | Expr:l PLUS Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "+");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "+");
 :}
 | Expr:l MINUS Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "-");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "-");
 :}
 | Expr:l TIMES Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "*");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "*");
 :}
 | Expr:l DIV Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "/");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "/");
 :}
 | Expr:l AND Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "and");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "and");
 :}
 | Expr:l OR Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "or");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "or");
 :}
 | Expr:l GT Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, ">");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, ">");
 :}
 | Expr:l GE Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, ">=");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, ">=");
 :}
 | Expr:l LT Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "<");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "<");
 :}
 | Expr:l LE Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "<=");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "<=");
 :}
 | Expr:l EQ Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "==");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "==");
 :}
 | Expr:l NE Expr:r
 {:
-    RESULT = new BinaryExprNode(l, r, "!=");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "!=");
 :}
 | LPAR Expr:expr RPAR
 {:
@@ -689,9 +690,10 @@ Expr ::= FunCall:funCall
 :}
 | UMINUS Expr:expr
 {:
-    RESULT = new UnaryExprNode(expr, "uminus");
+    RESULT = new UnaryExprNode((ExprNode) expr, "uminus");
 :}
 | NOT Expr:expr
 {:
-    RESULT = new UnaryExprNode(expr, "not");
+    RESULT = new UnaryExprNode((ExprNode) expr, "not");
 :};
+

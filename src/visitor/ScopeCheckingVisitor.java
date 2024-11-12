@@ -283,6 +283,82 @@ public class ScopeCheckingVisitor implements Visitor {
     }
 
     @Override
+    public Void visit(ReturnStatNode node) throws SemanticException {
+        // Verifica che siamo all'interno di una funzione
+        Symbol currentFunction = symbolTableManager.getCurrentProcedureOrFunctionSymbol();
+        if (currentFunction == null || currentFunction.getKind() != SymbolKind.FUNCTION) {
+            throw new SemanticException("Istruzione 'return' non permessa al di fuori di una funzione.");
+        }
+
+        List<String> returnTypes = currentFunction.getReturnTypes();
+        List<ExprNode> exprs = node.getExprs();
+
+        // Verifica che il numero di espressioni restituite corrisponda ai tipi di ritorno
+        if (exprs.size() != returnTypes.size()) {
+            throw new SemanticException("Il numero di valori restituiti non corrisponde al numero di tipi di ritorno dichiarati.");
+        }
+
+        // Visita le espressioni e verifica i tipi
+        for (int i = 0; i < exprs.size(); i++) {
+            ExprNode expr = exprs.get(i);
+            expr.accept(this);
+
+            // Qui potresti voler implementare un meccanismo per determinare il tipo dell'espressione
+            // e confrontarlo con returnTypes.get(i). Questo richiede un type checking più avanzato.
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visit(WriteStatNode node) throws SemanticException {
+        List<IOArgNode> args = node.getArgs();
+
+        // Visita ciascun argomento di I/O
+        for (IOArgNode arg : args) {
+            arg.accept(this);
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visit(WriteReturnStatNode node) throws SemanticException {
+        List<IOArgNode> args = node.getArgs();
+
+        // Visita ciascun argomento di I/O
+        for (IOArgNode arg : args) {
+            arg.accept(this);
+        }
+
+        return null;
+    }
+
+    @Override
+    public Void visit(ReadStatNode node) throws SemanticException {
+        List<IOArgNode> args = node.getArgs();
+
+        for (IOArgNode arg : args) {
+            if (arg instanceof IOArgIdentifierNode) {
+                IOArgIdentifierNode idNode = (IOArgIdentifierNode) arg;
+                String id = idNode.getIdentifier();
+
+                // Verifica che l'identificatore sia dichiarato
+                Symbol symbol = symbolTableManager.lookup(id);
+                if (symbol == null) {
+                    throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+                }
+
+                // Ulteriori controlli possono essere aggiunti qui, ad esempio verificare che la variabile sia assegnabile
+            } else {
+                throw new SemanticException("L'istruzione 'READ' accetta solo identificatori di variabili come argomenti.");
+            }
+        }
+
+        return null;
+    }
+
+    @Override
     public Void visit(ProcCallNode node) throws SemanticException {
         String procName = node.getProcedureName();
         Symbol symbol = symbolTableManager.lookup(procName);
@@ -355,6 +431,32 @@ public class ScopeCheckingVisitor implements Visitor {
         symbolTableManager.enterScope();
         node.getBody().accept(this);
         symbolTableManager.exitScope();
+
+        return null;
+    }
+
+    @Override
+    public Void visit(FunCallNode node) throws SemanticException {
+        String funcName = node.getFunctionName();
+        Symbol symbol = symbolTableManager.lookup(funcName);
+        if (symbol == null || symbol.getKind() != SymbolKind.FUNCTION) {
+            throw new SemanticException("Funzione '" + funcName + "' non dichiarata.");
+        }
+
+        List<ExprNode> args = node.getArguments();
+        List<String> paramTypes = symbol.getParamTypes();
+
+        // Verifica il numero di argomenti
+        if (args.size() != paramTypes.size()) {
+            throw new SemanticException("Numero di argomenti errato nella chiamata alla funzione '" + funcName + "'.");
+        }
+
+        // Visita gli argomenti e verifica i tipi
+        for (int i = 0; i < args.size(); i++) {
+            ExprNode arg = args.get(i);
+            arg.accept(this);
+            // Ulteriori controlli sui tipi possono essere aggiunti qui
+        }
 
         return null;
     }
