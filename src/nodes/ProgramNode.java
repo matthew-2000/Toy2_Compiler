@@ -5,38 +5,26 @@ import visitor.Visitor;
 import visitor.exception.SemanticException;
 
 public class ProgramNode implements Visitable {
-    private IterWithoutProcedureNode iterWithoutProcedure;
+    private ItersWithoutProcedureNode itersWithoutProcedure;
     private ProcedureNode procedure;
-    private IterNode iter;
+    private ItersNode iters;
 
-    public ProgramNode(IterWithoutProcedureNode iterWithoutProcedure, ProcedureNode procedure, IterNode iter) {
-        this.iterWithoutProcedure = iterWithoutProcedure;
+    public ProgramNode(ItersWithoutProcedureNode itersWithoutProcedure, ProcedureNode procedure, ItersNode iters) {
+        this.itersWithoutProcedure = itersWithoutProcedure;
         this.procedure = procedure;
-        this.iter = iter;
+        this.iters = iters;
     }
 
-    public IterWithoutProcedureNode getIterWithoutProcedure() {
-        return iterWithoutProcedure;
-    }
-
-    public void setIterWithoutProcedure(IterWithoutProcedureNode iterWithoutProcedure) {
-        this.iterWithoutProcedure = iterWithoutProcedure;
+    public ItersWithoutProcedureNode getItersWithoutProcedure() {
+        return itersWithoutProcedure;
     }
 
     public ProcedureNode getProcedure() {
         return procedure;
     }
 
-    public void setProcedure(ProcedureNode procedure) {
-        this.procedure = procedure;
-    }
-
-    public IterNode getIter() {
-        return iter;
-    }
-
-    public void setIter(IterNode iter) {
-        this.iter = iter;
+    public ItersNode getIters() {
+        return iters;
     }
 
     @Override

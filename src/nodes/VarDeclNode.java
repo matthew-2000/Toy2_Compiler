@@ -3,28 +3,17 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import java.util.List;
 
 public class VarDeclNode implements Visitable {
-    private IdsNode ids;      // Identificatori dichiarati
-    private TypeNode type;    // Tipo della dichiarazione
-    private ConstsNode consts; // Costanti per eventuale assegnazione
+    private List<DeclNode> decls;
 
-    public VarDeclNode(IdsNode ids, TypeNode type, ConstsNode consts) {
-        this.ids = ids;
-        this.type = type;
-        this.consts = consts;
+    public VarDeclNode(List<DeclNode> decls) {
+        this.decls = decls;
     }
 
-    public IdsNode getIds() {
-        return ids;
-    }
-
-    public TypeNode getType() {
-        return type;
-    }
-
-    public ConstsNode getConsts() {
-        return consts;
+    public List<DeclNode> getDecls() {
+        return decls;
     }
 
     @Override

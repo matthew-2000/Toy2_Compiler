@@ -11,7 +11,7 @@ import visitor.exception.SemanticException;
 public class Main {
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test1.txt";
+        String filePath = "test/test3.txt";
 
         // Tentiamo di aprire il file di input
         try {
@@ -36,11 +36,8 @@ public class Main {
 
             // Esecuzione del parsing
             System.out.println("\n=== Avvio del parsing ===");
-            ProgramNode result = (ProgramNode) parser.parse().value;
+            ProgramNode result = (ProgramNode) parser.debug_parse().value;
             System.out.println("=== Parsing completato con successo! ===");
-
-            ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor();
-            scopeCheckingVisitor.visit(result);
 
         } catch (FileNotFoundException e) {
             System.err.println("Errore: il file " + filePath + " non è stato trovato.");
@@ -49,8 +46,6 @@ public class Main {
         } catch (Exception e) {
             System.err.println("Errore durante l'analisi del file: " + e.getMessage());
             e.printStackTrace();
-        } catch (SemanticException e) {
-            System.err.println("Errore semantico: " + e.getMessage());
         }
     }
 

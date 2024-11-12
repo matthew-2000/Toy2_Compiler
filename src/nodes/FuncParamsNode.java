@@ -3,28 +3,17 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import java.util.List;
 
 public class FuncParamsNode implements Visitable {
-    private String identifier;      // Nome del parametro
-    private TypeNode type;          // Tipo del parametro
-    private OtherFuncParamsNode otherParams; // Parametri aggiuntivi
+    private List<ParamNode> params;
 
-    public FuncParamsNode(String identifier, TypeNode type, OtherFuncParamsNode otherParams) {
-        this.identifier = identifier;
-        this.type = type;
-        this.otherParams = otherParams;
+    public FuncParamsNode(List<ParamNode> params) {
+        this.params = params;
     }
 
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    public TypeNode getType() {
-        return type;
-    }
-
-    public OtherFuncParamsNode getOtherParams() {
-        return otherParams;
+    public List<ParamNode> getParams() {
+        return params;
     }
 
     @Override

@@ -1,5 +1,4 @@
 package visitor.symbolTable;
-
 import java.util.List;
 
 public class Symbol {

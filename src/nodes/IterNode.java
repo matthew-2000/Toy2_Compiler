@@ -4,28 +4,15 @@ import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class IterNode implements Visitable {
-    private List<Visitable> items;  // Lista di dichiarazioni, funzioni e procedure
+    private Visitable declaration; // Può essere VarDeclNode, FunctionNode o ProcedureNode
 
-    public IterNode(List<Visitable> items) {
-        this.items = items;
+    public IterNode(Visitable declaration) {
+        this.declaration = declaration;
     }
 
-    // Costruttore per inizializzare una lista vuota
-    public IterNode() {
-        this.items = new ArrayList<>();
-    }
-
-    // Metodo per aggiungere singoli elementi, adatto alle regole CUP
-    public void addItem(Visitable item) {
-        items.add(item);
-    }
-
-    public List<Visitable> getItems() {
-        return items;
+    public Visitable getDeclaration() {
+        return declaration;
     }
 
     @Override

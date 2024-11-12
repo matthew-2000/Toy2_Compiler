@@ -13,228 +13,247 @@ terminal TYPERETURN;
 terminal OUT;
 
 /* Dichiarazione dei non terminali */
-non terminal Program, Iter, VarDecl, Decls, Ids, Consts, Const, Type;
+non terminal Program, Iter, Iters, ItersWithoutProcedure, IterWithoutProcedure, VarDecl, Decls, Ids, Consts, Const, Type;
 non terminal Function, FuncParams, OtherFuncParams, Types;
 non terminal Procedure, ProcParams, OtherProcParams, ProcParamId;
 non terminal Body, Stat, FunCall, ProcCall, IfStat, Elifs, Elif, Else, WhileStat;
-non terminal IOArg, IOArgsList, ProcExprs, Exprs, Expr, IterWithoutProcedure;
+non terminal IOArg, IOArgsList, ProcExprs, Exprs, Expr;
 
 /* Definizione delle precedenze degli operatori */
 precedence left OR;
 precedence left AND;
 precedence right NOT;
 precedence nonassoc EQ, NE, LT, LE, GT, GE;
+precedence right UMINUS;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIV;
 
 /* Definizione del Programma principale */
-Program ::= IterWithoutProcedure:iterWithoutProc Procedure:proc Iter:it
+Program ::= ItersWithoutProcedure:itersWithoutProcedure Procedure:proc Iters:iters
 {:
     // Esegui il cast ai rispettivi tipi di nodo per evitare errori di tipo
     ProgramNode programNode = new ProgramNode(
-        (IterWithoutProcedureNode) iterWithoutProc,
+        (ItersWithoutProcedureNode) itersWithoutProcedure,
         (ProcedureNode) proc,
-        (IterNode) it
+        (ItersNode) iters
     );
     RESULT = programNode;
 :};
 
-/* Iterazione senza procedure */
-IterWithoutProcedure ::= VarDecl:varDecl IterWithoutProcedure:nextIterWithoutProc
+/* Lista di dichiarazioni top-level senza Procedure */
+ItersWithoutProcedure ::= /* empty */
 {:
-    IterWithoutProcedureNode iterNode = new IterWithoutProcedureNode();
-    iterNode.addItem((VarDeclNode) varDecl);
-    if (nextIterWithoutProc != null) {
-        iterNode.getItems().addAll(((IterWithoutProcedureNode) nextIterWithoutProc).getItems());
-    }
-    RESULT = iterNode;
+    // Crea una nuova lista vuota di IterWithoutProcedureNode
+    List<IterWithoutProcedureNode> iterList = new ArrayList<>();
+    ItersWithoutProcedureNode itersWithoutProcedureNode = new ItersWithoutProcedureNode(iterList);
+    RESULT = itersWithoutProcedureNode;
 :}
-| Function:function IterWithoutProcedure:nextIterWithoutProc
+| ItersWithoutProcedure:itersWithoutProcedure IterWithoutProcedure:iterWithoutProcedure
 {:
-    IterWithoutProcedureNode iterNode = new IterWithoutProcedureNode();
-    iterNode.addItem((FunctionNode) function);
-    if (nextIterWithoutProc != null) {
-        iterNode.getItems().addAll(((IterWithoutProcedureNode) nextIterWithoutProc).getItems());
-    }
-    RESULT = iterNode;
-:}
-| /* empty */
-{:
-    IterWithoutProcedureNode iterNode = new IterWithoutProcedureNode();
-    RESULT = iterNode;
+    // Aggiungi l'iterWithoutProcedure alla lista
+    ItersWithoutProcedureNode itersWithoutProcedureNode = (ItersWithoutProcedureNode) itersWithoutProcedure;
+    itersWithoutProcedureNode.addIter((IterWithoutProcedureNode) iterWithoutProcedure);
+    RESULT = itersWithoutProcedureNode;
 :};
 
-/* Iterazione con procedure */
-Iter ::= VarDecl:varDecl Iter:nextIter
+/* Definizione di una dichiarazione top-level senza Procedure */
+IterWithoutProcedure ::= VarDecl:varDecl
 {:
-    IterNode iterNode = new IterNode();
-    iterNode.addItem((VarDeclNode) varDecl);
-    if (nextIter != null) {
-        iterNode.getItems().addAll(((IterNode) nextIter).getItems());
-    }
+    IterWithoutProcedureNode iterWithoutProcedureNode = new IterWithoutProcedureNode((VarDeclNode) varDecl);
+    RESULT = iterWithoutProcedureNode;
+:}
+| Function:function
+{:
+    IterWithoutProcedureNode iterWithoutProcedureNode = new IterWithoutProcedureNode((FunctionNode) function);
+    RESULT = iterWithoutProcedureNode;
+:};
+
+/* Lista di dichiarazioni top-level (può includere Procedure) */
+Iters ::= /* empty */
+{:
+    // Crea una nuova lista vuota di IterNode
+    List<IterNode> iterList = new ArrayList<>();
+    ItersNode itersNode = new ItersNode(iterList);
+    RESULT = itersNode;
+:}
+| Iters:iters Iter:iter
+{:
+    // Aggiungi l'iter alla lista
+    ItersNode itersNode = (ItersNode) iters;
+    itersNode.addIter((IterNode) iter);
+    RESULT = itersNode;
+:};
+
+/* Definizione di una dichiarazione top-level */
+Iter ::= VarDecl:varDecl
+{:
+    IterNode iterNode = new IterNode((VarDeclNode) varDecl);
     RESULT = iterNode;
 :}
-| Function:function Iter:nextIter
+| Function:function
 {:
-    IterNode iterNode = new IterNode();
-    iterNode.addItem((FunctionNode) function);
-    if (nextIter != null) {
-        iterNode.getItems().addAll(((IterNode) nextIter).getItems());
-    }
+    IterNode iterNode = new IterNode((FunctionNode) function);
     RESULT = iterNode;
 :}
-| Procedure:procedure Iter:nextIter
+| Procedure:procedure
 {:
-    IterNode iterNode = new IterNode();
-    iterNode.addItem((ProcedureNode) procedure);
-    if (nextIter != null) {
-        iterNode.getItems().addAll(((IterNode) nextIter).getItems());
-    }
-    RESULT = iterNode;
-:}
-| /* empty */
-{:
-    IterNode iterNode = new IterNode();
+    IterNode iterNode = new IterNode((ProcedureNode) procedure);
     RESULT = iterNode;
 :};
 
 /* Dichiarazione di variabili */
-VarDecl ::= VAR Decls:decls
+VarDecl ::= VAR Decls:decls ENDVAR
 {:
-    VarDeclNode varDeclNode = new VarDeclNode((DeclsNode) decls);
+    // Crea un VarDeclNode con la lista di dichiarazioni
+    VarDeclNode varDeclNode = new VarDeclNode((List<DeclNode>) decls);
     RESULT = varDeclNode;
 :};
 
 /* Dichiarazioni e costanti */
 Decls ::= Ids:ids COLON Type:type SEMI Decls:nextDecls
 {:
-    List<Visitable> items = new ArrayList<>();
-    items.add(new DeclsNode((IdsNode) ids, (TypeNode) type, null));
-    if (nextDecls != null) {
-        items.addAll(((DeclsNode) nextDecls).getItems());
-    }
-    DeclsNode declsNode = new DeclsNode(items);
-    RESULT = declsNode;
+    // Crea un DeclNode per questa dichiarazione
+    DeclNode declNode = new DeclNode(
+        (List<String>) ids,
+        (String) type,
+        null // Nessuna costante
+    );
+    // Aggiungi questa dichiarazione alla lista
+    List<DeclNode> decls = new ArrayList<>();
+    decls.add(declNode);
+    // Aggiungi le dichiarazioni successive
+    decls.addAll((List<DeclNode>) nextDecls);
+    RESULT = decls;
 :}
 | Ids:ids ASSIGN Consts:consts SEMI Decls:nextDecls
 {:
-    List<Visitable> items = new ArrayList<>();
-    items.add(new DeclsNode((IdsNode) ids, null, (ConstsNode) consts));
-    if (nextDecls != null) {
-        items.addAll(((DeclsNode) nextDecls).getItems());
-    }
-    DeclsNode declsNode = new DeclsNode(items);
-    RESULT = declsNode;
+    // Crea un DeclNode per questa dichiarazione con costanti
+    DeclNode declNode = new DeclNode(
+        (List<String>) ids,
+        null, // Nessun tipo specificato
+        (List<ConstNode>) consts
+    );
+    // Aggiungi questa dichiarazione alla lista
+    List<DeclNode> decls = new ArrayList<>();
+    decls.add(declNode);
+    // Aggiungi le dichiarazioni successive
+    decls.addAll((List<DeclNode>) nextDecls);
+    RESULT = decls;
 :}
-| Ids:ids COLON Type:type SEMI ENDVAR
+| Ids:ids COLON Type:type SEMI
 {:
-    List<Visitable> items = new ArrayList<>();
-    items.add(new DeclsNode((IdsNode) ids, (TypeNode) type, null));
-    DeclsNode declsNode = new DeclsNode(items);
-    RESULT = declsNode;
+    // Crea un DeclNode per questa dichiarazione
+    DeclNode declNode = new DeclNode(
+        (List<String>) ids,
+        (String) type,
+        null // Nessuna costante
+    );
+    // Crea una lista con questa dichiarazione
+    List<DeclNode> decls = new ArrayList<>();
+    decls.add(declNode);
+    RESULT = decls;
 :}
-| Ids:ids ASSIGN Consts:consts SEMI ENDVAR
+| Ids:ids ASSIGN Consts:consts SEMI
 {:
-    List<Visitable> items = new ArrayList<>();
-    items.add(new DeclsNode((IdsNode) ids, null, (ConstsNode) consts));
-    DeclsNode declsNode = new DeclsNode(items);
-    RESULT = declsNode;
+    // Crea un DeclNode per questa dichiarazione con costanti
+    DeclNode declNode = new DeclNode(
+        (List<String>) ids,
+        null, // Nessun tipo specificato
+        (List<ConstNode>) consts
+    );
+    // Crea una lista con questa dichiarazione
+    List<DeclNode> decls = new ArrayList<>();
+    decls.add(declNode);
+    RESULT = decls;
 :};
 
 /* Lista di identificatori */
 Ids ::= IDENTIFIER:id COMMA Ids:nextIds
 {:
-    List<String> identifiers = new ArrayList<>();
-    identifiers.add(id.toString());
-    if (nextIds != null) {
-        identifiers.addAll(((IdsNode) nextIds).getIdentifiers());
-    }
-    IdsNode idsNode = new IdsNode(identifiers);
-    RESULT = idsNode;
+    // Crea una lista di identificatori
+    List<String> ids = new ArrayList<>();
+    ids.add((String) id);
+    ids.addAll((List<String>) nextIds);
+    RESULT = ids;
 :}
 | IDENTIFIER:id
 {:
-    List<String> identifiers = new ArrayList<>();
-    identifiers.add(id.toString());
-    IdsNode idsNode = new IdsNode(identifiers);
-    RESULT = idsNode;
+    // Crea una lista con questo identificatore
+    List<String> ids = new ArrayList<>();
+    ids.add((String) id);
+    RESULT = ids;
 :};
 
 /* Lista di costanti */
 Consts ::= Const:constant COMMA Consts:nextConsts
 {:
-    List<ConstNode> constants = new ArrayList<>();
-    constants.add((ConstNode) constant);
-    if (nextConsts != null) {
-        constants.addAll(((ConstsNode) nextConsts).getConstants());
-    }
-    ConstsNode constsNode = new ConstsNode(constants);
-    RESULT = constsNode;
+    // Crea una lista di costanti
+    List<ConstNode> consts = new ArrayList<>();
+    consts.add((ConstNode) constant);
+    consts.addAll((List<ConstNode>) nextConsts);
+    RESULT = consts;
 :}
 | Const:constant
 {:
-    List<ConstNode> constants = new ArrayList<>();
-    constants.add((ConstNode) constant);
-    ConstsNode constsNode = new ConstsNode(constants);
-    RESULT = constsNode;
+    // Crea una lista con questa costante
+    List<ConstNode> consts = new ArrayList<>();
+    consts.add((ConstNode) constant);
+    RESULT = consts;
 :};
 
 /* Definizione di una costante */
 Const ::= REAL_CONST:realConst
 {:
-    ConstNode constNode = new ConstNode(realConst.toString(), "REAL_CONST");
+    ConstNode constNode = new ConstNode((Double) realConst);
     RESULT = constNode;
 :}
 | NUMBER_LITERAL:number
 {:
-    ConstNode constNode = new ConstNode(number.toString(), "NUMBER_LITERAL");
+    ConstNode constNode = new ConstNode((Integer) number);
     RESULT = constNode;
 :}
 | STRING_LITERAL:stringLiteral
 {:
-    ConstNode constNode = new ConstNode(stringLiteral.toString(), "STRING_LITERAL");
+    ConstNode constNode = new ConstNode((String) stringLiteral);
     RESULT = constNode;
 :}
 | TRUE
 {:
-    ConstNode constNode = new ConstNode("true", "BOOLEAN");
+    ConstNode constNode = new ConstNode(true);
     RESULT = constNode;
 :}
 | FALSE
 {:
-    ConstNode constNode = new ConstNode("false", "BOOLEAN");
+    ConstNode constNode = new ConstNode(false);
     RESULT = constNode;
 :};
 
 /* Definizione di un tipo */
 Type ::= REAL
 {:
-    TypeNode typeNode = new TypeNode("REAL");
-    RESULT = typeNode;
+    RESULT = "real";
 :}
 | INTEGER
 {:
-    TypeNode typeNode = new TypeNode("INTEGER");
-    RESULT = typeNode;
+    RESULT = "integer";
 :}
 | STRING
 {:
-    TypeNode typeNode = new TypeNode("STRING");
-    RESULT = typeNode;
+    RESULT = "string";
 :}
 | BOOLEAN
 {:
-    TypeNode typeNode = new TypeNode("BOOLEAN");
-    RESULT = typeNode;
+    RESULT = "boolean";
 :};
 
 /* Definizione di una funzione */
 Function ::= FUNC IDENTIFIER:funcName LPAR FuncParams:params RPAR TYPERETURN Types:returnType COLON Body:body ENDFUNC
 {:
+    // Crea un FunctionNode con i componenti analizzati
     FunctionNode functionNode = new FunctionNode(
-        funcName.toString(),
+        (String) funcName,
         (FuncParamsNode) params,
-        (TypesNode) returnType,
+        (List<String>) returnType,
         (BodyNode) body
     );
     RESULT = functionNode;
@@ -243,16 +262,17 @@ Function ::= FUNC IDENTIFIER:funcName LPAR FuncParams:params RPAR TYPERETURN Typ
 /* Parametri di una funzione */
 FuncParams ::= IDENTIFIER:id COLON Type:type OtherFuncParams:otherParams
 {:
-    List<FuncParamIdNode> params = new ArrayList<>();
-    params.add(new FuncParamIdNode(id.toString(), (TypeNode) type));
-    if (otherParams != null) {
-        params.addAll(((FuncParamsNode) otherParams).getParams());
-    }
+    // Crea una lista di parametri iniziando con questo
+    List<ParamNode> params = new ArrayList<>();
+    ParamNode paramNode = new ParamNode((String) id, (String) type);
+    params.add(paramNode);
+    params.addAll((List<ParamNode>) otherParams);
     FuncParamsNode funcParamsNode = new FuncParamsNode(params);
     RESULT = funcParamsNode;
 :}
 | /* empty */
 {:
+    // Nessun parametro
     FuncParamsNode funcParamsNode = new FuncParamsNode(new ArrayList<>());
     RESULT = funcParamsNode;
 :};
@@ -260,458 +280,322 @@ FuncParams ::= IDENTIFIER:id COLON Type:type OtherFuncParams:otherParams
 /* Altri parametri di una funzione */
 OtherFuncParams ::= COMMA IDENTIFIER:id COLON Type:type OtherFuncParams:otherParams
 {:
-    List<FuncParamIdNode> params = new ArrayList<>();
-    params.add(new FuncParamIdNode(id.toString(), (TypeNode) type));
-    if (otherParams != null) {
-        params.addAll(((FuncParamsNode) otherParams).getParams());
-    }
-    FuncParamsNode otherFuncParamsNode = new FuncParamsNode(params);
-    RESULT = otherFuncParamsNode;
+    // Crea una lista di parametri aggiuntivi
+    List<ParamNode> params = new ArrayList<>();
+    ParamNode paramNode = new ParamNode((String) id, (String) type);
+    params.add(paramNode);
+    params.addAll((List<ParamNode>) otherParams);
+    RESULT = params;
 :}
 | /* empty */
 {:
-    FuncParamsNode otherFuncParamsNode = new FuncParamsNode(new ArrayList<>());
-    RESULT = otherFuncParamsNode;
+    // Nessun altro parametro
+    RESULT = new ArrayList<ParamNode>();
 :};
 
 /* Definizione di una lista di tipi */
 Types ::= Type:type COMMA Types:nextTypes
 {:
-    List<TypeNode> types = new ArrayList<>();
-    types.add((TypeNode) type);
-    if (nextTypes != null) {
-        types.addAll(((TypesNode) nextTypes).getTypes());
-    }
-    TypesNode typesNode = new TypesNode(types);
-    RESULT = typesNode;
+    // Crea una lista di tipi di ritorno
+    List<String> types = new ArrayList<>();
+    types.add((String) type);
+    types.addAll((List<String>) nextTypes);
+    RESULT = types;
 :}
 | Type:type
 {:
-    List<TypeNode> types = new ArrayList<>();
-    types.add((TypeNode) type);
-    TypesNode typesNode = new TypesNode(types);
-    RESULT = typesNode;
+    // Crea una lista con un singolo tipo di ritorno
+    List<String> types = new ArrayList<>();
+    types.add((String) type);
+    RESULT = types;
+:};
+
+/* procedura */
+Procedure ::= PROC IDENTIFIER:id LPAR ProcParams:params RPAR COLON Body:body ENDPROC
+{:
+
 :};
 
 /* Parametri di una procedura */
 ProcParams ::= ProcParamId:paramId COLON Type:type OtherProcParams:otherParams
 {:
-    List<ProcParamIdNode> params = new ArrayList<>();
-    params.add(new ProcParamIdNode(paramId.getName(), (TypeNode) type, paramId.isOut()));
-    if (otherParams != null) {
-        params.addAll(((ProcParamsNode) otherParams).getParams());
-    }
-    ProcParamsNode procParamsNode = new ProcParamsNode(params);
-    RESULT = procParamsNode;
+
 :}
 | /* empty */
 {:
-    ProcParamsNode procParamsNode = new ProcParamsNode(new ArrayList<>());
-    RESULT = procParamsNode;
+
 :};
 
 /* Altri parametri di una procedura */
 OtherProcParams ::= COMMA ProcParamId:paramId COLON Type:type OtherProcParams:otherParams
 {:
-    List<ProcParamIdNode> params = new ArrayList<>();
-    params.add(new ProcParamIdNode(paramId.getName(), (TypeNode) type, paramId.isOut()));
-    if (otherParams != null) {
-        params.addAll(((ProcParamsNode) otherParams).getParams());
-    }
-    ProcParamsNode otherProcParamsNode = new ProcParamsNode(params);
-    RESULT = otherProcParamsNode;
-:}
-| /* empty */
-{:
-    ProcParamsNode otherProcParamsNode = new ProcParamsNode(new ArrayList<>());
-    RESULT = otherProcParamsNode;
-:};
 
-/* Altri parametri di una procedura */
-OtherProcParams ::= COMMA ProcParamId:paramId COLON Type:type OtherProcParams:otherParams
-{:
-    List<ParamNode> params = new ArrayList<>();
-    params.add(new ParamNode((ProcParamIdNode) paramId, (TypeNode) type));
-    if (otherParams != null) {
-        params.addAll(((ProcParamsNode) otherParams).getParams());
-    }
-    ProcParamsNode otherProcParamsNode = new ProcParamsNode(params);
-    RESULT = otherProcParamsNode;
 :}
 | /* empty */
 {:
-    ProcParamsNode otherProcParamsNode = new ProcParamsNode(new ArrayList<>());
-    RESULT = otherProcParamsNode;
+
 :};
 
 /* Definizione di un parametro di procedura */
 ProcParamId ::= IDENTIFIER:identifier
 {:
-    ProcParamIdNode paramIdNode = new ProcParamIdNode(identifier.toString(), false);
-    RESULT = paramIdNode;
+
 :}
 | OUT IDENTIFIER:identifier
 {:
-    ProcParamIdNode paramIdNode = new ProcParamIdNode(identifier.toString(), true);
-    RESULT = paramIdNode;
+
 :};
 
 /* Definizione del corpo di una funzione o procedura */
 Body ::= VarDecl:varDecl Body:nextBody
 {:
-    List<Visitable> items = new ArrayList<>();
-    items.add((Visitable) varDecl);
-    if (nextBody != null) {
-        items.addAll(((BodyNode) nextBody).getItems());
-    }
-    BodyNode bodyNode = new BodyNode(items);
-    RESULT = bodyNode;
+
 :}
 | Stat:stat Body:nextBody
 {:
-    List<Visitable> items = new ArrayList<>();
-    items.add((Visitable) stat);
-    if (nextBody != null) {
-        items.addAll(((BodyNode) nextBody).getItems());
-    }
-    BodyNode bodyNode = new BodyNode(items);
-    RESULT = bodyNode;
+
 :}
 | /* empty */
 {:
-    BodyNode bodyNode = new BodyNode(new ArrayList<>());
-    RESULT = bodyNode;
+
 :};
 
 /* Dichiarazione delle istruzioni */
 Stat ::= Ids:ids ASSIGN Exprs:exprs SEMI
 {:
-    StatNode statNode = new StatNode((IdsNode) ids, (ExprsNode) exprs, "ASSIGN");
-    RESULT = statNode;
+
 :}
 | ProcCall:procCall SEMI
 {:
-    StatNode statNode = new StatNode((ProcCallNode) procCall, "PROC_CALL");
-    RESULT = statNode;
+
 :}
 | RETURN Exprs:exprs SEMI
 {:
-    StatNode statNode = new StatNode((ExprsNode) exprs, "RETURN");
-    RESULT = statNode;
+
 :}
 | WRITE IOArgsList:ioArgsList SEMI
 {:
-    StatNode statNode = new StatNode((IOArgsListNode) ioArgsList, "WRITE");
-    RESULT = statNode;
+
 :}
 | WRITERETURN IOArgsList:ioArgsList SEMI
 {:
-    StatNode statNode = new StatNode((IOArgsListNode) ioArgsList, "WRITERETURN");
-    RESULT = statNode;
+
 :}
 | READ IOArgsList:ioArgsList SEMI
 {:
-    StatNode statNode = new StatNode((IOArgsListNode) ioArgsList, "READ");
-    RESULT = statNode;
+
 :}
 | IfStat:ifStat SEMI
 {:
-    StatNode statNode = new StatNode((IfStatNode) ifStat, "IF");
-    RESULT = statNode;
+
 :}
 | WhileStat:whileStat SEMI
 {:
-    StatNode statNode = new StatNode((WhileStatNode) whileStat, "WHILE");
-    RESULT = statNode;
+
 :};
 
 /* Chiamate a funzione */
 FunCall ::= IDENTIFIER:funcName LPAR Exprs:args RPAR
 {:
-    FunCallNode funCallNode = new FunCallNode(funcName.toString(), (ExprsNode) args);
-    RESULT = funCallNode;
+
 :}
 | IDENTIFIER:funcName LPAR RPAR
 {:
-    FunCallNode funCallNode = new FunCallNode(funcName.toString(), null);
-    RESULT = funCallNode;
+
 :};
 
 /* Chiamate a procedura */
 ProcCall ::= IDENTIFIER:procName LPAR ProcExprs:args RPAR
 {:
-    ProcCallNode procCallNode = new ProcCallNode(procName.toString(), (ProcExprsNode) args);
-    RESULT = procCallNode;
+
 :}
 | IDENTIFIER:procName LPAR RPAR
 {:
-    ProcCallNode procCallNode = new ProcCallNode(procName.toString(), null);
-    RESULT = procCallNode;
+
 :};
 
 /* Definizione delle istruzioni condizionali */
 IfStat ::= IF Expr:condition THEN Body:thenBody Elifs:elifBlocks Else:elseBlock ENDIF
 {:
-    IfStatNode ifStatNode = new IfStatNode(
-        (ExprNode) condition,
-        (BodyNode) thenBody,
-        (ElifsNode) elifBlocks,
-        (ElseNode) elseBlock
-    );
-    RESULT = ifStatNode;
+
 :};
 
 /* Liste di condizioni ELIF */
 Elifs ::= Elif:elifBlock Elifs:nextElifs
 {:
-    List<ElifNode> elifNodes = new ArrayList<>();
-    elifNodes.add((ElifNode) elifBlock);
-    if (nextElifs != null) {
-        elifNodes.addAll(((ElifsNode) nextElifs).getElifBlocks());
-    }
-    ElifsNode elifsNode = new ElifsNode(elifNodes);
-    RESULT = elifsNode;
+
 :}
 | /* empty */
 {:
-    ElifsNode elifsNode = new ElifsNode(new ArrayList<>());
-    RESULT = elifsNode;
+
 :};
 
 /* Condizione ELIF */
 Elif ::= ELIF Expr:condition THEN Body:body
 {:
-    ElifNode elifNode = new ElifNode((ExprNode) condition, (BodyNode) body);
-    RESULT = elifNode;
+
 :};
 
 /* Condizione ELSE */
 Else ::= ELSE Body:body
 {:
-    ElseNode elseNode = new ElseNode((BodyNode) body);
-    RESULT = elseNode;
+
 :}
 | /* empty */
 {:
-    ElseNode elseNode = new ElseNode(null);
-    RESULT = elseNode;
+
 :};
 
 /* Definizione delle istruzioni di loop */
 WhileStat ::= WHILE Expr:condition DO Body:body ENDWHILE
 {:
-    WhileStatNode whileStatNode = new WhileStatNode((ExprNode) condition, (BodyNode) body);
-    RESULT = whileStatNode;
+
 :};
 
 /* Argomenti di Input/Output */
 IOArgsList ::= IOArg:arg IOArgsList:nextArgs
 {:
-    List<IOArgNode> args = new ArrayList<>();
-    args.add((IOArgNode) arg);
-    if (nextArgs != null) {
-        args.addAll(((IOArgsListNode) nextArgs).getArgs());
-    }
-    IOArgsListNode ioArgsListNode = new IOArgsListNode(args);
-    RESULT = ioArgsListNode;
+
 :}
 | DOLLAR LPAR Expr:expr RPAR IOArgsList:nextArgs
 {:
-    List<IOArgNode> args = new ArrayList<>();
-    args.add(new IOArgNode((ExprNode) expr, true));
-    if (nextArgs != null) {
-        args.addAll(((IOArgsListNode) nextArgs).getArgs());
-    }
-    IOArgsListNode ioArgsListNode = new IOArgsListNode(args);
-    RESULT = ioArgsListNode;
+
 :}
 | /* empty */
 {:
-    IOArgsListNode ioArgsListNode = new IOArgsListNode(new ArrayList<>());
-    RESULT = ioArgsListNode;
+
 :};
 
 /* Singolo argomento di I/O */
 IOArg ::= IOArg:l PLUS IOArg:r
 {:
-    IOArgNode ioArgNode = new IOArgNode((IOArgNode) l, (IOArgNode) r);
-    RESULT = ioArgNode;
+
 :}
 | IDENTIFIER:id
 {:
-    IOArgNode ioArgNode = new IOArgNode(id.toString(), false);
-    RESULT = ioArgNode;
+
 :}
 | STRING_LITERAL:literal
 {:
-    IOArgNode ioArgNode = new IOArgNode(literal.toString());
-    RESULT = ioArgNode;
+
 :};
 
 /* Parametri di espressioni per le procedure */
 ProcExprs ::= Expr:expr COMMA ProcExprs:nextExprs
 {:
-    List<ProcExprNode> procExprs = new ArrayList<>();
-    procExprs.add(new ProcExprNode((ExprNode) expr, false));
-    if (nextExprs != null) {
-        procExprs.addAll(((ProcExprsNode) nextExprs).getExpressions());
-    }
-    ProcExprsNode procExprsNode = new ProcExprsNode(procExprs);
-    RESULT = procExprsNode;
+
 :}
 | REF IDENTIFIER:id COMMA ProcExprs:nextExprs
 {:
-    List<ProcExprNode> procExprs = new ArrayList<>();
-    procExprs.add(new ProcExprNode(id.toString(), true));
-    if (nextExprs != null) {
-        procExprs.addAll(((ProcExprsNode) nextExprs).getExpressions());
-    }
-    ProcExprsNode procExprsNode = new ProcExprsNode(procExprs);
-    RESULT = procExprsNode;
+
 :}
 | Expr:expr
 {:
-    List<ProcExprNode> procExprs = new ArrayList<>();
-    procExprs.add(new ProcExprNode((ExprNode) expr, false));
-    ProcExprsNode procExprsNode = new ProcExprsNode(procExprs);
-    RESULT = procExprsNode;
+
 :}
 | REF IDENTIFIER:id
 {:
-    List<ProcExprNode> procExprs = new ArrayList<>();
-    procExprs.add(new ProcExprNode(id.toString(), true));
-    ProcExprsNode procExprsNode = new ProcExprsNode(procExprs);
-    RESULT = procExprsNode;
-:};
 
+:};
 
 /* Lista di espressioni */
 Exprs ::= Expr:expr COMMA Exprs:nextExprs
 {:
-    List<ExprNode> exprs = new ArrayList<>();
-    exprs.add((ExprNode) expr);
-    if (nextExprs != null) {
-        exprs.addAll(((ExprsNode) nextExprs).getExpressions());
-    }
-    ExprsNode exprsNode = new ExprsNode(exprs);
-    RESULT = exprsNode;
+
 :}
 | Expr:expr
 {:
-    List<ExprNode> exprs = new ArrayList<>();
-    exprs.add((ExprNode) expr);
-    ExprsNode exprsNode = new ExprsNode(exprs);
-    RESULT = exprsNode;
+
 :};
 
 
 /* Definizione di espressioni */
 Expr ::= FunCall:funCall
 {:
-    RESULT = funCall;
+
 :}
 | REAL_CONST:realConst
 {:
-    ExprNode exprNode = new ExprNode(realConst.toString(), "REAL_CONST");
-    RESULT = exprNode;
+
 :}
 | NUMBER_LITERAL:number
 {:
-    ExprNode exprNode = new ExprNode(number.toString(), "NUMBER_LITERAL");
-    RESULT = exprNode;
+
 :}
 | STRING_LITERAL:stringLiteral
 {:
-    ExprNode exprNode = new ExprNode(stringLiteral.toString(), "STRING_LITERAL");
-    RESULT = exprNode;
+
 :}
 | IDENTIFIER:id
 {:
-    ExprNode exprNode = new ExprNode(id.toString(), "IDENTIFIER");
-    RESULT = exprNode;
+
 :}
 | TRUE
 {:
-    ExprNode exprNode = new ExprNode("true", "BOOLEAN");
-    RESULT = exprNode;
+
 :}
 | FALSE
 {:
-    ExprNode exprNode = new ExprNode("false", "BOOLEAN");
-    RESULT = exprNode;
+
 :}
 | Expr:l PLUS Expr:r
 {:
-    ExprNode exprNode = new ExprNode("+", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l MINUS Expr:r
 {:
-    ExprNode exprNode = new ExprNode("-", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l TIMES Expr:r
 {:
-    ExprNode exprNode = new ExprNode("*", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l DIV Expr:r
 {:
-    ExprNode exprNode = new ExprNode("/", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l AND Expr:r
 {:
-    ExprNode exprNode = new ExprNode("AND", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l OR Expr:r
 {:
-    ExprNode exprNode = new ExprNode("OR", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l GT Expr:r
 {:
-    ExprNode exprNode = new ExprNode(">", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l GE Expr:r
 {:
-    ExprNode exprNode = new ExprNode(">=", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l LT Expr:r
 {:
-    ExprNode exprNode = new ExprNode("<", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l LE Expr:r
 {:
-    ExprNode exprNode = new ExprNode("<=", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l EQ Expr:r
 {:
-    ExprNode exprNode = new ExprNode("==", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | Expr:l NE Expr:r
 {:
-    ExprNode exprNode = new ExprNode("!=", (ExprNode) l, (ExprNode) r);
-    RESULT = exprNode;
+
 :}
 | LPAR Expr:expr RPAR
 {:
-    RESULT = expr;
+
 :}
-| MINUS Expr:expr
+| UMINUS Expr:expr
 {:
-    ExprNode exprNode = new ExprNode("MINUS", (ExprNode) expr);
-    RESULT = exprNode;
+
 :}
 | NOT Expr:expr
 {:
-    ExprNode exprNode = new ExprNode("NOT", (ExprNode) expr);
-    RESULT = exprNode;
+
 :};
 

@@ -3,30 +3,32 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import java.util.List;
 
 public class FunctionNode implements Visitable {
-    private String functionName;
+    private String name;
     private FuncParamsNode params;
-    private TypesNode returnType;
+    private List<String> returnTypes;
     private BodyNode body;
 
-    public FunctionNode(String functionName, FuncParamsNode params, TypesNode returnType, BodyNode body) {
-        this.functionName = functionName;
+    public FunctionNode(String name, FuncParamsNode params, List<String> returnTypes, BodyNode body) {
+        this.name = name;
         this.params = params;
-        this.returnType = returnType;
+        this.returnTypes = returnTypes;
         this.body = body;
     }
 
-    public String getFunctionName() {
-        return functionName;
+    // Getter
+    public String getName() {
+        return name;
     }
 
     public FuncParamsNode getParams() {
         return params;
     }
 
-    public TypesNode getReturnType() {
-        return returnType;
+    public List<String> getReturnTypes() {
+        return returnTypes;
     }
 
     public BodyNode getBody() {

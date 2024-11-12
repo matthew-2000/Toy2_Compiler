@@ -3,34 +3,17 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import java.util.List;
 
 public class ProcParamsNode implements Visitable {
-    private String identifier;        // Nome del parametro
-    private TypeNode type;            // Tipo del parametro
-    private boolean isOutParam;       // Se il parametro è un parametro "OUT"
-    private OtherProcParamsNode otherParams; // Parametri aggiuntivi
+    private List<ProcParamNode> params;
 
-    public ProcParamsNode(String identifier, TypeNode type, boolean isOutParam, OtherProcParamsNode otherParams) {
-        this.identifier = identifier;
-        this.type = type;
-        this.isOutParam = isOutParam;
-        this.otherParams = otherParams;
+    public ProcParamsNode(List<ProcParamNode> params) {
+        this.params = params;
     }
 
-    public String getIdentifier() {
-        return identifier;
-    }
-
-    public TypeNode getType() {
-        return type;
-    }
-
-    public boolean isOutParam() {
-        return isOutParam;
-    }
-
-    public OtherProcParamsNode getOtherParams() {
-        return otherParams;
+    public List<ProcParamNode> getParams() {
+        return params;
     }
 
     @Override

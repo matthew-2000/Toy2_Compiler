@@ -5,23 +5,14 @@ import visitor.Visitor;
 import visitor.exception.SemanticException;
 
 public class ConstNode implements Visitable {
-    private String value;
-    private String type;  // Tipo del nodo, assegnato in fase di visita
+    private Object value;
 
-    public ConstNode(String value) {
+    public ConstNode(Object value) {
         this.value = value;
     }
 
-    public String getValue() {
+    public Object getValue() {
         return value;
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public void setType(String type) {
-        this.type = type;
     }
 
     @Override

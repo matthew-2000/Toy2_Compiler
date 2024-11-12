@@ -4,6 +4,8 @@ import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
 
+import java.util.List;
+
 public class ProcedureNode implements Visitable {
     private String procedureName;      // Nome della procedura
     private ProcParamsNode params;     // Parametri della procedura
@@ -27,6 +29,7 @@ public class ProcedureNode implements Visitable {
         return body;
     }
 
+    // Metodo accept per il visitor
     @Override
     public <T> T accept(Visitor<T> visitor) throws SemanticException {
         return visitor.visit(this);
