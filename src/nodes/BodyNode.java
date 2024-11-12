@@ -6,14 +6,18 @@ import visitor.exception.SemanticException;
 import java.util.List;
 
 public class BodyNode implements Visitable {
-    private List<StatNode> statements;
+    private List<Visitable> statements;
 
-    public BodyNode(List<StatNode> statements) {
+    public BodyNode(List<Visitable> statements) {
         this.statements = statements;
     }
 
-    public List<StatNode> getStatements() {
+    public List<Visitable> getStatements() {
         return statements;
+    }
+
+    public void addStatement(Visitable statement) {
+        statements.add(statement);
     }
 
     @Override

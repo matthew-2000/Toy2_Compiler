@@ -1,5 +1,6 @@
 package nodes;
 
+import nodes.expr.ExprNode;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;

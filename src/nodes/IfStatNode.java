@@ -1,21 +1,21 @@
 package nodes;
 
-import visitor.Visitable;
+import nodes.expr.ExprNode;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
 import java.util.List;
 
-public class IfStatNode implements Visitable {
-    private ExprNode condition;       // Condizione dell'if
-    private BodyNode thenBody;        // Corpo dell'if
-    private List<ElifNode> elifNodes; // Lista delle condizioni elif
-    private ElseNode elseNode;        // Blocco else (opzionale)
+public class IfStatNode extends StatNode {
+    private ExprNode condition;
+    private BodyNode thenBody;
+    private List<ElifNode> elifBlocks;
+    private ElseNode elseBlock;
 
-    public IfStatNode(ExprNode condition, BodyNode thenBody, List<ElifNode> elifNodes, ElseNode elseNode) {
+    public IfStatNode(ExprNode condition, BodyNode thenBody, List<ElifNode> elifBlocks, ElseNode elseBlock) {
         this.condition = condition;
         this.thenBody = thenBody;
-        this.elifNodes = elifNodes;
-        this.elseNode = elseNode;
+        this.elifBlocks = elifBlocks;
+        this.elseBlock = elseBlock;
     }
 
     public ExprNode getCondition() {
@@ -26,12 +26,12 @@ public class IfStatNode implements Visitable {
         return thenBody;
     }
 
-    public List<ElifNode> getElifNodes() {
-        return elifNodes;
+    public List<ElifNode> getElifBlocks() {
+        return elifBlocks;
     }
 
-    public ElseNode getElseNode() {
-        return elseNode;
+    public ElseNode getElseBlock() {
+        return elseBlock;
     }
 
     @Override

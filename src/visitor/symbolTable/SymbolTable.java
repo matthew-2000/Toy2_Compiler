@@ -31,4 +31,9 @@ public class SymbolTable {
         }
         return null;  // Simbolo non trovato
     }
+
+    // Getter per il parent (potrebbe essere utile)
+    public SymbolTable getParent() {
+        return parent;
+    }
 }

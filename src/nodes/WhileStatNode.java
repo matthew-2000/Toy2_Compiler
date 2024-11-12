@@ -1,10 +1,10 @@
 package nodes;
 
-import visitor.Visitable;
+import nodes.expr.ExprNode;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
 
-public class WhileStatNode implements Visitable {
+public class WhileStatNode extends StatNode {
     private ExprNode condition;
     private BodyNode body;
 

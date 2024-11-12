@@ -1,13 +1,14 @@
 package nodes;
 
+import nodes.expr.ExprNode;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
 import java.util.List;
 
 public class ProcCallNode implements Visitable {
-    private String procedureName;       // Nome della procedura
-    private List<ExprNode> arguments;   // Argomenti della procedura
+    private String procedureName;
+    private List<ExprNode> arguments;
 
     public ProcCallNode(String procedureName, List<ExprNode> arguments) {
         this.procedureName = procedureName;

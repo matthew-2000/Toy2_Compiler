@@ -1,4 +1,5 @@
 import nodes.*;
+import nodes.statNodes.*;
 import visitor.Visitable;
 import java.util.*;
 
@@ -313,289 +314,384 @@ Types ::= Type:type COMMA Types:nextTypes
 /* procedura */
 Procedure ::= PROC IDENTIFIER:id LPAR ProcParams:params RPAR COLON Body:body ENDPROC
 {:
-
+    // Crea un ProcedureNode con i componenti analizzati
+    ProcedureNode procedureNode = new ProcedureNode(
+        (String) id,
+        (ProcParamsNode) params,
+        (BodyNode) body
+    );
+    RESULT = procedureNode;
 :};
 
 /* Parametri di una procedura */
 ProcParams ::= ProcParamId:paramId COLON Type:type OtherProcParams:otherParams
 {:
-
+    // Crea una lista di parametri iniziando con questo
+    List<ProcParamNode> params = new ArrayList<>();
+    ProcParamIdNode procParamIdNode = (ProcParamIdNode) paramId;
+    ProcParamNode paramNode = new ProcParamNode(
+        (String) procParamIdNode.name,
+        (String) type,
+        procParamIdNode.isOut
+    );
+    params.add(paramNode);
+    params.addAll((List<ProcParamNode>) otherParams);
+    ProcParamsNode procParamsNode = new ProcParamsNode(params);
+    RESULT = procParamsNode;
 :}
 | /* empty */
 {:
-
+    // Nessun parametro
+    ProcParamsNode procParamsNode = new ProcParamsNode(new ArrayList<>());
+    RESULT = procParamsNode;
 :};
 
 /* Altri parametri di una procedura */
 OtherProcParams ::= COMMA ProcParamId:paramId COLON Type:type OtherProcParams:otherParams
 {:
-
+    // Crea una lista di parametri aggiuntivi
+    List<ProcParamNode> params = new ArrayList<>();
+    ProcParamIdNode procParamIdNode = (ProcParamIdNode) paramId;
+    ProcParamNode paramNode = new ProcParamNode(
+        (String) procParamIdNode.name,
+        (String) type,
+        procParamIdNode.isOut
+    );
+    params.add(paramNode);
+    params.addAll((List<ProcParamNode>) otherParams);
+    RESULT = params;
 :}
 | /* empty */
 {:
-
+    // Nessun altro parametro
+    RESULT = new ArrayList<ProcParamNode>();
 :};
 
 /* Definizione di un parametro di procedura */
 ProcParamId ::= IDENTIFIER:identifier
 {:
-
+    // Parametro normale
+    ProcParamIdNode paramIdNode = new ProcParamIdNode((String) identifier, false);
+    RESULT = paramIdNode;
 :}
 | OUT IDENTIFIER:identifier
 {:
-
+    // Parametro OUT
+    ProcParamIdNode paramIdNode = new ProcParamIdNode((String) identifier, true);
+    RESULT = paramIdNode;
 :};
 
 /* Definizione del corpo di una funzione o procedura */
 Body ::= VarDecl:varDecl Body:nextBody
 {:
-
+    BodyNode bodyNode = (BodyNode) nextBody;
+    if (bodyNode == null) {
+        bodyNode = new BodyNode(new ArrayList<>());
+    }
+    bodyNode.getStatements().add(0, (VarDeclNode) varDecl);
+    RESULT = bodyNode;
 :}
 | Stat:stat Body:nextBody
 {:
-
+    BodyNode bodyNode = (BodyNode) nextBody;
+    if (bodyNode == null) {
+        bodyNode = new BodyNode(new ArrayList<>());
+    }
+    bodyNode.getStatements().add(0, (StatNode) stat);
+    RESULT = bodyNode;
 :}
 | /* empty */
 {:
-
+    RESULT = new BodyNode(new ArrayList<>());
 :};
 
 /* Dichiarazione delle istruzioni */
 Stat ::= Ids:ids ASSIGN Exprs:exprs SEMI
 {:
-
+    StatNode statNode = new AssignStatNode((List<String>) ids, (List<ExprNode>) exprs);
+    RESULT = statNode;
 :}
 | ProcCall:procCall SEMI
 {:
-
+    StatNode statNode = new ProcCallStatNode((ProcCallNode) procCall);
+    RESULT = statNode;
 :}
 | RETURN Exprs:exprs SEMI
 {:
-
+    StatNode statNode = new ReturnStatNode((List<ExprNode>) exprs);
+    RESULT = statNode;
 :}
 | WRITE IOArgsList:ioArgsList SEMI
 {:
-
+    StatNode statNode = new WriteStatNode((List<IOArgNode>) ioArgsList);
+    RESULT = statNode;
 :}
 | WRITERETURN IOArgsList:ioArgsList SEMI
 {:
-
+    StatNode statNode = new WriteReturnStatNode((List<IOArgNode>) ioArgsList);
+    RESULT = statNode;
 :}
 | READ IOArgsList:ioArgsList SEMI
 {:
-
+    StatNode statNode = new ReadStatNode((List<IOArgNode>) ioArgsList);
+    RESULT = statNode;
 :}
 | IfStat:ifStat SEMI
 {:
-
+    StatNode statNode = (IfStatNode) ifStat;
+    RESULT = statNode;
 :}
 | WhileStat:whileStat SEMI
 {:
-
+    StatNode statNode = (WhileStatNode) whileStat;
+    RESULT = statNode;
 :};
+
 
 /* Chiamate a funzione */
 FunCall ::= IDENTIFIER:funcName LPAR Exprs:args RPAR
 {:
-
+    FunCallNode funCallNode = new FunCallNode((String) funcName, (List<ExprNode>) args);
+    RESULT = funCallNode;
 :}
 | IDENTIFIER:funcName LPAR RPAR
 {:
-
+    FunCallNode funCallNode = new FunCallNode((String) funcName, new ArrayList<>());
+    RESULT = funCallNode;
 :};
 
 /* Chiamate a procedura */
 ProcCall ::= IDENTIFIER:procName LPAR ProcExprs:args RPAR
 {:
-
+    ProcCallNode procCallNode = new ProcCallNode((String) procName, (List<ExprNode>) args);
+    RESULT = procCallNode;
 :}
 | IDENTIFIER:procName LPAR RPAR
 {:
-
+    ProcCallNode procCallNode = new ProcCallNode((String) procName, new ArrayList<>());
+    RESULT = procCallNode;
 :};
 
 /* Definizione delle istruzioni condizionali */
 IfStat ::= IF Expr:condition THEN Body:thenBody Elifs:elifBlocks Else:elseBlock ENDIF
 {:
-
+    IfStatNode ifStatNode = new IfStatNode(
+        (ExprNode) condition,
+        (BodyNode) thenBody,
+        (List<ElifNode>) elifBlocks,
+        (ElseNode) elseBlock
+    );
+    RESULT = ifStatNode;
 :};
 
 /* Liste di condizioni ELIF */
 Elifs ::= Elif:elifBlock Elifs:nextElifs
 {:
-
+    List<ElifNode> elifs = new ArrayList<>();
+    elifs.add((ElifNode) elifBlock);
+    elifs.addAll((List<ElifNode>) nextElifs);
+    RESULT = elifs;
 :}
 | /* empty */
 {:
-
+    RESULT = new ArrayList<ElifNode>();
 :};
 
 /* Condizione ELIF */
 Elif ::= ELIF Expr:condition THEN Body:body
 {:
-
+    ElifNode elifNode = new ElifNode((ExprNode) condition, (BodyNode) body);
+    RESULT = elifNode;
 :};
 
 /* Condizione ELSE */
 Else ::= ELSE Body:body
 {:
-
+    ElseNode elseNode = new ElseNode((BodyNode) body);
+    RESULT = elseNode;
 :}
 | /* empty */
 {:
-
+    RESULT = null;  // Nessun blocco else
 :};
 
 /* Definizione delle istruzioni di loop */
 WhileStat ::= WHILE Expr:condition DO Body:body ENDWHILE
 {:
-
+    WhileStatNode whileStatNode = new WhileStatNode((ExprNode) condition, (BodyNode) body);
+    RESULT = whileStatNode;
 :};
 
 /* Argomenti di Input/Output */
 IOArgsList ::= IOArg:arg IOArgsList:nextArgs
 {:
-
+    List<IOArgNode> argsList = new ArrayList<>();
+    argsList.add((IOArgNode) arg);
+    argsList.addAll((List<IOArgNode>) nextArgs);
+    RESULT = argsList;
 :}
 | DOLLAR LPAR Expr:expr RPAR IOArgsList:nextArgs
 {:
-
+    IOArgNode argNode = new DollarExprNode((ExprNode) expr);
+    List<IOArgNode> argsList = new ArrayList<>();
+    argsList.add(argNode);
+    argsList.addAll((List<IOArgNode>) nextArgs);
+    RESULT = argsList;
 :}
 | /* empty */
 {:
-
+    RESULT = new ArrayList<IOArgNode>();
 :};
 
 /* Singolo argomento di I/O */
 IOArg ::= IOArg:l PLUS IOArg:r
 {:
-
+    IOArgNode ioArgNode = new IOArgBinaryNode((IOArgNode) l, (IOArgNode) r, "+");
+    RESULT = ioArgNode;
 :}
 | IDENTIFIER:id
 {:
-
+    IOArgNode ioArgNode = new IOArgIdentifierNode((String) id);
+    RESULT = ioArgNode;
 :}
 | STRING_LITERAL:literal
 {:
-
+    IOArgNode ioArgNode = new IOArgStringLiteralNode((String) literal);
+    RESULT = ioArgNode;
 :};
 
 /* Parametri di espressioni per le procedure */
 ProcExprs ::= Expr:expr COMMA ProcExprs:nextExprs
 {:
-
+    // Crea una lista di parametri di espressione
+    List<ProcExprNode> exprs = new ArrayList<>();
+    exprs.add(new ProcExprNode(expr, false));
+    exprs.addAll(nextExprs);
+    RESULT = exprs;
 :}
 | REF IDENTIFIER:id COMMA ProcExprs:nextExprs
 {:
-
+    // Crea una lista di parametri di riferimento
+    List<ProcExprNode> exprs = new ArrayList<>();
+    exprs.add(new ProcExprNode(new IdentifierNode(id), true));
+    exprs.addAll(nextExprs);
+    RESULT = exprs;
 :}
 | Expr:expr
 {:
-
+    List<ProcExprNode> exprs = new ArrayList<>();
+    exprs.add(new ProcExprNode(expr, false));
+    RESULT = exprs;
 :}
 | REF IDENTIFIER:id
 {:
-
+    List<ProcExprNode> exprs = new ArrayList<>();
+    exprs.add(new ProcExprNode(new IdentifierNode(id), true));
+    RESULT = exprs;
 :};
 
 /* Lista di espressioni */
 Exprs ::= Expr:expr COMMA Exprs:nextExprs
 {:
-
+    // Crea una lista di espressioni
+    List<ExprNode> exprs = new ArrayList<>();
+    exprs.add(expr);
+    exprs.addAll(nextExprs);
+    RESULT = exprs;
 :}
 | Expr:expr
 {:
-
+    List<ExprNode> exprs = new ArrayList<>();
+    exprs.add(expr);
+    RESULT = exprs;
 :};
-
 
 /* Definizione di espressioni */
 Expr ::= FunCall:funCall
 {:
-
+    RESULT = funCall;
 :}
 | REAL_CONST:realConst
 {:
-
+    RESULT = new RealConstNode(realConst);
 :}
 | NUMBER_LITERAL:number
 {:
-
+    RESULT = new IntConstNode(number);
 :}
 | STRING_LITERAL:stringLiteral
 {:
-
+    RESULT = new StringConstNode(stringLiteral);
 :}
 | IDENTIFIER:id
 {:
-
+    RESULT = new IdentifierNode(id);
 :}
 | TRUE
 {:
-
+    RESULT = new BooleanConstNode(true);
 :}
 | FALSE
 {:
-
+    RESULT = new BooleanConstNode(false);
 :}
 | Expr:l PLUS Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "+");
 :}
 | Expr:l MINUS Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "-");
 :}
 | Expr:l TIMES Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "*");
 :}
 | Expr:l DIV Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "/");
 :}
 | Expr:l AND Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "and");
 :}
 | Expr:l OR Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "or");
 :}
 | Expr:l GT Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, ">");
 :}
 | Expr:l GE Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, ">=");
 :}
 | Expr:l LT Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "<");
 :}
 | Expr:l LE Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "<=");
 :}
 | Expr:l EQ Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "==");
 :}
 | Expr:l NE Expr:r
 {:
-
+    RESULT = new BinaryExprNode(l, r, "!=");
 :}
 | LPAR Expr:expr RPAR
 {:
-
+    RESULT = expr;
 :}
 | UMINUS Expr:expr
 {:
-
+    RESULT = new UnaryExprNode(expr, "uminus");
 :}
 | NOT Expr:expr
 {:
-
+    RESULT = new UnaryExprNode(expr, "not");
 :};
-

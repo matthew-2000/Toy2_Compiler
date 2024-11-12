@@ -1,13 +1,14 @@
 package nodes;
 
+import nodes.expr.ExprNode;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
 import java.util.List;
 
 public class FunCallNode implements Visitable {
-    private String functionName;       // Nome della funzione
-    private List<ExprNode> arguments;  // Argomenti della funzione
+    private String functionName;
+    private List<ExprNode> arguments;
 
     public FunCallNode(String functionName, List<ExprNode> arguments) {
         this.functionName = functionName;
