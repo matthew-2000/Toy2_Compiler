@@ -5,7 +5,7 @@ import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
 
-public class ProcExprNode implements Visitable {
+public class ProcExprNode implements ExprNode {
     private ExprNode expr;
     private boolean isRef;
 

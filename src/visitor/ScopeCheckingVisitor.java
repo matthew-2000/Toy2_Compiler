@@ -3,7 +3,7 @@ package visitor;
 import nodes.*;
 import nodes.ProgramNode;
 import nodes.expr.*;
-import nodes.statNodes.*;
+import nodes.stat.*;
 import visitor.exception.SemanticException;
 import visitor.symbolTable.Symbol;
 import visitor.symbolTable.SymbolKind;
@@ -157,20 +157,21 @@ public class ScopeCheckingVisitor implements Visitor {
 
     @Override
     public Object visit(FuncParamsNode node) throws SemanticException {
+        List<String> paramTypes = new ArrayList<>();
         for (ParamNode param : node.getParams()) {
-            param.accept(this);
+            paramTypes.add((String) param.accept(this));
         }
-        return null;
+        return paramTypes;
     }
 
     @Override
-    public Void visit(ParamNode node) throws SemanticException {
+    public Object visit(ParamNode node) throws SemanticException {
         // Aggiungi il parametro alla tabella dei simboli dello scope corrente
         boolean success = symbolTableManager.addSymbol(node.getName(), node.getType(), SymbolKind.VARIABLE);
         if (!success) {
             throw new SemanticException("Parametro '" + node.getName() + "' già dichiarato nello scope corrente.");
         }
-        return null;
+        return node.getType();
     }
 
     @Override
@@ -350,8 +351,6 @@ public class ScopeCheckingVisitor implements Visitor {
                 }
 
                 // Ulteriori controlli possono essere aggiunti qui, ad esempio verificare che la variabile sia assegnabile
-            } else {
-                throw new SemanticException("L'istruzione 'READ' accetta solo identificatori di variabili come argomenti.");
             }
         }
 

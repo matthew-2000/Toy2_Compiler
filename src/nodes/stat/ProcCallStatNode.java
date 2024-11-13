@@ -1,4 +1,4 @@
-package nodes.statNodes;
+package nodes.stat;
 
 import nodes.ProcCallNode;
 import nodes.StatNode;

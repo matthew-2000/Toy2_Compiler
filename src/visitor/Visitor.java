@@ -2,7 +2,7 @@ package visitor;
 
 import nodes.*;
 import nodes.expr.*;
-import nodes.statNodes.*;
+import nodes.stat.*;
 import visitor.exception.SemanticException;
 
 public interface Visitor<T> {

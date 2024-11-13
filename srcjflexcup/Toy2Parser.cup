@@ -1,5 +1,5 @@
 import nodes.*;
-import nodes.statNodes.*;
+import nodes.stat.*;
 import nodes.expr.*;
 import visitor.Visitable;
 import java.util.*;

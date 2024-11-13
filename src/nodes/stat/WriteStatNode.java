@@ -1,4 +1,4 @@
-package nodes.statNodes;
+package nodes.stat;
 
 import nodes.IOArgNode;
 import nodes.StatNode;
