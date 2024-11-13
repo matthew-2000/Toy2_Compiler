@@ -3,6 +3,33 @@ import nodes.statNodes.*;
 import nodes.expr.*;
 import visitor.Visitable;
 import java.util.*;
+import java_cup.runtime.Symbol;
+
+// Sezione per il codice personalizzato del parser
+parser code {:
+    // Sovrascrive il metodo syntax_error per migliorare la gestione degli errori
+    public void syntax_error(Symbol cur_token) {
+        // Prendi la linea e la colonna dell'errore dal simbolo corrente
+        int line = cur_token.left; // posizione della linea dell'errore
+        int column = cur_token.right; // posizione della colonna
+
+        // Mostra un messaggio dettagliato
+        System.err.println("Errore di sintassi! Token non atteso: " + cur_token.value);
+        System.err.println("Posizione dell'errore: linea " + line + ", colonna " + column);
+
+        // Informazioni aggiuntive sul tipo del token
+        System.err.println("Dettagli del token: tipo " + cur_token.sym + ", valore: " + cur_token.value);
+    }
+
+    // Sovrascrive il metodo report_error per messaggi personalizzati in caso di errore generico
+    public void report_error(String message, Object info) {
+        System.err.println("Errore di parsing: " + message);
+        if (info instanceof Symbol) {
+            Symbol symbol = (Symbol) info;
+            System.err.println("Posizione dell'errore: linea " + symbol.left + ", colonna " + symbol.right);
+        }
+    }
+:};
 
 /* Dichiarazione dei terminali */
 terminal VAR, PROC, FUNC, ENDVAR, ENDPROC, ENDFUNC, RETURN, IF, THEN, ELSE, ELIF, ENDIF, WHILE, DO, ENDWHILE;
