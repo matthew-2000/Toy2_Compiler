@@ -13,7 +13,7 @@ import unisa.compilatori.sym;
 RelOp = ( < ( = | > ) ? ) | ( > ( = ) ? ) | =
 Identifier = [A-Za-z_][A-Za-z0-9_]*
 DecIntegerLiteral = 0 | [1-9][0-9]*
-Number = {DecIntegerLiteral} (\.[0-9]+)? (E[+-]?[0-9]+)?
+Number = [0-9]+\.[0-9]+(E[+-]?[0-9]+)? | [0-9]+E[+-]?[0-9]+
 LineTerminator = \r\n|\r|\n
 WhiteSpace = {LineTerminator} | [ \t\f]
 
@@ -88,7 +88,8 @@ WhiteSpace = {LineTerminator} | [ \t\f]
 <YYINITIAL> {
     {RelOp}         { return symbol(sym.RELOP, yytext()); }
     {Identifier}    { return symbol(sym.IDENTIFIER, yytext()); }
-    {Number}        { return symbol(sym.NUMBER_LITERAL, yytext()); }
+    {DecIntegerLiteral}        { return symbol(sym.NUMBER_LITERAL, yytext()); }
+    {Number}        { return symbol(sym.REAL_CONST, yytext()); }
     "$"             { return symbol(sym.DOLLAR); }  /* Simbolo di concatenazione stringhe */
     "("             { return symbol(sym.LPAR); }
     ")"             { return symbol(sym.RPAR); }

@@ -11,7 +11,7 @@ import visitor.exception.SemanticException;
 public class Main {
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test4.txt";
+        String filePath = "test/test1.txt";
 
         // Tentiamo di aprire il file di input
         try {
@@ -53,10 +53,8 @@ public class Main {
             System.err.println("Errore durante la lettura del file: " + e.getMessage());
         } catch (SemanticException e) {
             System.err.println("Errore semantico: " + e.getMessage());
-            e.printStackTrace();
         } catch (Exception e) {
             System.err.println("Errore durante l'analisi del file: " + e.getMessage());
-            e.printStackTrace();
         }
     }
 
