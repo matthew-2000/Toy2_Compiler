@@ -63,10 +63,10 @@ public class SymbolTable {
 
     @Override
     public String toString() {
-        return "SymbolTable{" +
-                "symbolTableName='" + symbolTableName + '\'' +
-                ", symbols=" + symbols +
-                ", parent=" + parent.symbolTableName +
+        return "SymbolTable=\n{" +
+                " symbolTableName='" + symbolTableName +
+                ",\n symbols=\n" + symbols +
+                ", \nparent=" + parent.symbolTableName +
                 '}';
     }
 }

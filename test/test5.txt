@@ -1,32 +1,5 @@
 %PROGRAMMA PRINCIPALE%
 
-func somma(n1:real,n2:real)-> real:
-    var risultato: real;\
-    risultato ^= n1 + n2;
-    return risultato;
-endfunc
-
-func moltiplicazione(n1:real,n2:real)-> real:
-    var risultato: real;\
-    risultato ^= n1 * n2;
-    return risultato;
-endfunc
-
-func divisione(n1:real,n2:real)-> real:
-    var risultato: real;\
-    risultato ^= n1 / n2;
-    return risultato;
-endfunc
-
-func sottrazione(n1:real,n2:real)-> real:
-    var risultato: real;\
-    risultato ^= n1 - n2;
-    return risultato;
-endfunc
-
-
-
-
 proc main():
 
     var
@@ -75,3 +48,26 @@ proc main():
     endwhile;
     endproc
 
+func somma(n1:real,n2:real)-> real:
+    var risultato: real;\
+    risultato ^= n1 + n2;
+    return risultato;
+endfunc
+
+func moltiplicazione(n1:real,n2:real)-> real:
+    var risultato: real;\
+    risultato ^= n1 * n2;
+    return risultato;
+endfunc
+
+func divisione(n1:real,n2:real)-> real:
+    var risultato: real;\
+    risultato ^= n1 / n2;
+    return risultato;
+endfunc
+
+func sottrazione(n1:real,n2:real)-> real:
+    var risultato: real;\
+    risultato ^= n1 - n2;
+    return risultato;
+endfunc

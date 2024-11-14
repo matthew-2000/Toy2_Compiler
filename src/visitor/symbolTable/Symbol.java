@@ -53,6 +53,6 @@ public class Symbol {
                 ", paramTypes=" + paramTypes +
                 ", isOutParams=" + isOutParams +
                 ", returnTypes=" + returnTypes +
-                '}' + "\n" ;
+                "}" + "\n" ;
     }
 }
