@@ -1,3 +1,14 @@
 proc main(out a: integer, b: integer):
-a ^= a +b;
+ c ^= somma(a, b);
+ var c : integer;\
+ if(true) then
+    d ^= 3;
+ endif;
 endproc
+
+func somma(a:integer, b:integer)-> integer:
+    a ^= a + b; %DEVE DARE ERRORE NEL TYPE CHECKING - I PARAM SONO IMMUTABILI %
+    return a;
+endfunc
+
+var d : integer;\

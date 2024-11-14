@@ -36,9 +36,10 @@ public class ScopeCheckingVisitor implements Visitor {
         if (node.getIters() != null) {
             node.getIters().accept(this);
         }
-
         // Esci dallo scope globale
         symbolTableManager.exitScope();
+
+        symbolTableManager.checkUnresolvedReferencesAtEnd();
 
         return null;
     }
@@ -264,9 +265,9 @@ public class ScopeCheckingVisitor implements Visitor {
         for (String id : ids) {
             Symbol symbol = symbolTableManager.lookup(id);
             if (symbol == null) {
-                throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+//                throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+                symbolTableManager.addUnresolvedReference(id);
             }
-            // Ulteriori controlli sui tipi possono essere aggiunti qui
         }
 
         // Visita le espressioni
@@ -347,7 +348,8 @@ public class ScopeCheckingVisitor implements Visitor {
                 // Verifica che l'identificatore sia dichiarato
                 Symbol symbol = symbolTableManager.lookup(id);
                 if (symbol == null) {
-                    throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+                    symbolTableManager.addUnresolvedReference(id);
+                    // throw new SemanticException("Variabile '" + id + "' non dichiarata.");
                 }
 
                 // Ulteriori controlli possono essere aggiunti qui, ad esempio verificare che la variabile sia assegnabile
@@ -361,17 +363,13 @@ public class ScopeCheckingVisitor implements Visitor {
     public Void visit(ProcCallNode node) throws SemanticException {
         String procName = node.getProcedureName();
         Symbol symbol = symbolTableManager.lookup(procName);
-        if (symbol == null || symbol.getKind() != SymbolKind.PROCEDURE) {
-            throw new SemanticException("Procedura '" + procName + "' non dichiarata.");
+        if (symbol == null) {
+            symbolTableManager.addUnresolvedReference(procName);
+        } else if (symbol.getKind() != SymbolKind.PROCEDURE) {
+            throw new SemanticException("Identificatore '" + procName + "' non è una procedura.");
         }
 
         List<ExprNode> args = node.getArguments();
-        List<String> paramTypes = symbol.getParamTypes();
-
-        // Verifica il numero di argomenti
-        if (args.size() != paramTypes.size()) {
-            throw new SemanticException("Numero di argomenti errato nella chiamata alla procedura '" + procName + "'.");
-        }
 
         // Visita gli argomenti e verifica i tipi
         for (int i = 0; i < args.size(); i++) {
@@ -441,17 +439,14 @@ public class ScopeCheckingVisitor implements Visitor {
     public Void visit(FunCallNode node) throws SemanticException {
         String funcName = node.getFunctionName();
         Symbol symbol = symbolTableManager.lookup(funcName);
-        if (symbol == null || symbol.getKind() != SymbolKind.FUNCTION) {
-            throw new SemanticException("Funzione '" + funcName + "' non dichiarata.");
+        if (symbol == null) {
+            // Se la funzione non è dichiarata, aggiungiamo un riferimento non risolto
+            symbolTableManager.addUnresolvedReference(funcName);
+        } else if (symbol.getKind() != SymbolKind.FUNCTION) {
+            throw new SemanticException("Identificatore '" + funcName + "' non è una funzione.");
         }
 
         List<ExprNode> args = node.getArguments();
-        List<String> paramTypes = symbol.getParamTypes();
-
-        // Verifica il numero di argomenti
-        if (args.size() != paramTypes.size()) {
-            throw new SemanticException("Numero di argomenti errato nella chiamata alla funzione '" + funcName + "'.");
-        }
 
         // Visita gli argomenti e verifica i tipi
         for (int i = 0; i < args.size(); i++) {
@@ -470,7 +465,8 @@ public class ScopeCheckingVisitor implements Visitor {
         // Verifica che l'identificatore sia dichiarato
         Symbol symbol = symbolTableManager.lookup(id);
         if (symbol == null) {
-            throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+            // throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+            symbolTableManager.addUnresolvedReference(id);
         }
 
         // Ulteriori controlli possono essere aggiunti qui, ad esempio verificare il tipo della variabile
@@ -524,7 +520,8 @@ public class ScopeCheckingVisitor implements Visitor {
             String id = ((IdentifierNode) node.getExpr()).getName();
             Symbol symbol = symbolTableManager.lookup(id);
             if (symbol == null) {
-                throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+                // throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+                symbolTableManager.addUnresolvedReference(id);
             }
             // Ulteriori controlli sul tipo possono essere aggiunti qui
         } else {
@@ -557,7 +554,8 @@ public class ScopeCheckingVisitor implements Visitor {
         String id = node.getName();
         Symbol symbol = symbolTableManager.lookup(id);
         if (symbol == null) {
-            throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+            // throw new SemanticException("Variabile '" + id + "' non dichiarata.");
+            symbolTableManager.addUnresolvedReference(id);
         }
         // Ulteriori controlli sul tipo possono essere aggiunti qui
         return null;

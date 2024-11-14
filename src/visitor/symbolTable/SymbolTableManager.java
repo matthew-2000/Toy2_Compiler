@@ -1,5 +1,7 @@
 package visitor.symbolTable;
 
+import visitor.exception.SemanticException;
+
 import java.util.Stack;
 import java.util.List;
 
@@ -19,11 +21,19 @@ public class SymbolTableManager {
     }
 
     // Esci dallo scope corrente
-    public void exitScope() {
+    public void exitScope() throws SemanticException {
+
         System.out.println("==== EXIT SCOPE ====");
         System.out.println(scopeStack.peek().toString());
+
         if (!scopeStack.isEmpty()) {
-            scopeStack.pop();
+            SymbolTable currentTable = scopeStack.pop();
+            // Verifica se ci sono riferimenti non risolti in questo scope
+            if (!currentTable.getUnresolvedReferences().isEmpty()) {
+                for (String s : currentTable.getUnresolvedReferences()) {
+                    scopeStack.peek().addUnresolvedReference(s);
+                }
+            }
             // Se stiamo uscendo dallo scope di una funzione o procedura, aggiorniamo il simbolo corrente
             if (currentProcedureOrFunctionSymbol != null && scopeStack.peek() != null) {
                 SymbolTable currentScope = scopeStack.peek();
@@ -39,6 +49,11 @@ public class SymbolTableManager {
     public boolean addSymbol(String name, String type, SymbolKind kind) {
         Symbol symbol = new Symbol(name, type, kind);
         return scopeStack.peek().addSymbol(name, symbol);
+    }
+
+    // Aggiunge un riferimento non risolto allo scope corrente
+    public void addUnresolvedReference(String name) {
+        scopeStack.peek().addUnresolvedReference(name);
     }
 
     // Aggiungi un simbolo per una funzione
@@ -85,6 +100,14 @@ public class SymbolTableManager {
     public void updateCurrentFunctionReturnTypes(List<String> returnTypes) {
         if (currentProcedureOrFunctionSymbol != null && currentProcedureOrFunctionSymbol.getKind() == SymbolKind.FUNCTION) {
             currentProcedureOrFunctionSymbol.setReturnTypes(returnTypes);
+        }
+    }
+
+    // Verifica i riferimenti non risolti alla fine del programma
+    public void checkUnresolvedReferencesAtEnd() throws SemanticException {
+        SymbolTable globalScope = scopeStack.firstElement();
+        if (!globalScope.getUnresolvedReferences().isEmpty()) {
+            throw new SemanticException("Riferimenti a simboli non dichiarati: " + globalScope.getUnresolvedReferences());
         }
     }
 }

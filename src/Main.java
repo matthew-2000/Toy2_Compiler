@@ -53,8 +53,10 @@ public class Main {
             System.err.println("Errore durante la lettura del file: " + e.getMessage());
         } catch (SemanticException e) {
             System.err.println("Errore semantico: " + e.getMessage());
+            e.printStackTrace();
         } catch (Exception e) {
             System.err.println("Errore durante l'analisi del file: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
