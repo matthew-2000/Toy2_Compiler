@@ -2,10 +2,12 @@ package nodes.expr;
 
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 public class UnaryExprNode implements ExprNode {
     private ExprNode expr;
     private String operator;
+    private Type type;
 
     public UnaryExprNode(ExprNode expr, String operator) {
         this.expr = expr;
@@ -18,6 +20,16 @@ public class UnaryExprNode implements ExprNode {
 
     public String getOperator() {
         return operator;
+    }
+
+    @Override
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package visitor.symbolTable;
 
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 import java.util.Stack;
 import java.util.List;
@@ -12,6 +13,12 @@ public class SymbolTableManager {
     public SymbolTableManager() {
         scopeStack = new Stack<>();
         scopeStack.push(new SymbolTable(null, "GLOBAL"));  // Tabella globale (senza genitore)
+    }
+
+    // Entra in un nuovo scope
+    public void enterScope() {
+        SymbolTable newScope = new SymbolTable(scopeStack.peek(), "");
+        scopeStack.push(newScope);
     }
 
     // Entra in un nuovo scope
@@ -46,7 +53,7 @@ public class SymbolTableManager {
     }
 
     // Aggiungi un simbolo allo scope corrente (variabile)
-    public boolean addSymbol(String name, String type, SymbolKind kind) {
+    public boolean addSymbol(String name, Type type, SymbolKind kind) {
         Symbol symbol = new Symbol(name, type, kind);
         return scopeStack.peek().addSymbol(name, symbol);
     }
@@ -57,7 +64,7 @@ public class SymbolTableManager {
     }
 
     // Aggiungi un simbolo per una funzione
-    public boolean addFunctionSymbol(String name, List<String> paramTypes, List<String> returnTypes) {
+    public boolean addFunctionSymbol(String name, List<Type> paramTypes, List<Type> returnTypes) {
         Symbol symbol = new Symbol(name, paramTypes, returnTypes, SymbolKind.FUNCTION);
         boolean added = scopeStack.peek().addSymbol(name, symbol);
         if (added) {
@@ -67,7 +74,7 @@ public class SymbolTableManager {
     }
 
     // Aggiungi un simbolo per una procedura
-    public boolean addProcedureSymbol(String name, List<String> paramTypes, List<Boolean> isOutParams) {
+    public boolean addProcedureSymbol(String name, List<Type> paramTypes, List<Boolean> isOutParams) {
         Symbol symbol = new Symbol(name, SymbolKind.PROCEDURE, paramTypes, isOutParams);
         boolean added = scopeStack.peek().addSymbol(name, symbol);
         if (added) {
@@ -87,7 +94,7 @@ public class SymbolTableManager {
     }
 
     // Aggiorna i tipi di parametri e i flag isOutParams per la procedura o funzione corrente
-    public void updateCurrentProcedureOrFunctionParams(List<String> paramTypes, List<Boolean> isOutParams) {
+    public void updateCurrentProcedureOrFunctionParams(List<Type> paramTypes, List<Boolean> isOutParams) {
         if (currentProcedureOrFunctionSymbol != null) {
             currentProcedureOrFunctionSymbol.setParamTypes(paramTypes);
             if (currentProcedureOrFunctionSymbol.getKind() == SymbolKind.PROCEDURE) {
@@ -97,7 +104,7 @@ public class SymbolTableManager {
     }
 
     // Aggiorna i tipi di ritorno per la funzione corrente
-    public void updateCurrentFunctionReturnTypes(List<String> returnTypes) {
+    public void updateCurrentFunctionReturnTypes(List<Type> returnTypes) {
         if (currentProcedureOrFunctionSymbol != null && currentProcedureOrFunctionSymbol.getKind() == SymbolKind.FUNCTION) {
             currentProcedureOrFunctionSymbol.setReturnTypes(returnTypes);
         }

@@ -3,9 +3,11 @@ package nodes.expr;
 import nodes.expr.ExprNode;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 public class RealConstNode implements ExprNode {
     private double value;
+    private Type type;
 
     public RealConstNode(double value) {
         this.value = value;
@@ -13,6 +15,16 @@ public class RealConstNode implements ExprNode {
 
     public double getValue() {
         return value;
+    }
+
+    @Override
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

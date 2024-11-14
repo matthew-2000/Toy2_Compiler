@@ -3,9 +3,11 @@ package nodes.expr;
 import nodes.expr.ExprNode;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 public class IdentifierNode implements ExprNode {
     private String name;
+    private Type type;
 
     public IdentifierNode(String name) {
         this.name = name;
@@ -13,6 +15,16 @@ public class IdentifierNode implements ExprNode {
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

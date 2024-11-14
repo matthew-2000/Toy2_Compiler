@@ -3,15 +3,17 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
+
 import java.util.List;
 
 public class FunctionNode implements Visitable {
     private String name;
     private FuncParamsNode params;
-    private List<String> returnTypes;
+    private List<Type> returnTypes;
     private BodyNode body;
 
-    public FunctionNode(String name, FuncParamsNode params, List<String> returnTypes, BodyNode body) {
+    public FunctionNode(String name, FuncParamsNode params, List<Type> returnTypes, BodyNode body) {
         this.name = name;
         this.params = params;
         this.returnTypes = returnTypes;
@@ -27,7 +29,7 @@ public class FunctionNode implements Visitable {
         return params;
     }
 
-    public List<String> getReturnTypes() {
+    public List<Type> getReturnTypes() {
         return returnTypes;
     }
 

@@ -1,24 +1,35 @@
 package visitor.symbolTable;
 
+import visitor.utils.Type;
+
 import java.util.List;
 
 public class Symbol {
     private String name;
-    private String type;  // Tipo del simbolo (es. integer, real, function, ecc.)
+    private Type type;  // Tipo del simbolo (es. integer, real, function, ecc.)
     private SymbolKind kind;  // Variabile, Funzione o Procedura
-    private List<String> paramTypes;  // Tipi dei parametri (per funzioni e procedure)
+    private boolean isParameter = false;
+    private List<Type> paramTypes;  // Tipi dei parametri (per funzioni e procedure)
     private List<Boolean> isOutParams;  // Flag per i parametri OUT (per procedure)
-    private List<String> returnTypes;   // Tipi di ritorno (per funzioni)
+    private List<Type> returnTypes;   // Tipi di ritorno (per funzioni)
 
     // Costruttore per variabili
-    public Symbol(String name, String type, SymbolKind kind) {
+    public Symbol(String name, Type type, SymbolKind kind) {
         this.name = name;
         this.type = type;
         this.kind = kind;
     }
 
+    // Costruttore per variabili parametri di funzione
+    public Symbol(String name, Type type, SymbolKind kind, boolean isParameter) {
+        this.name = name;
+        this.type = type;
+        this.kind = kind;
+        this.isParameter = isParameter;
+    }
+
     // Costruttore per funzioni
-    public Symbol(String name, List<String> paramTypes, List<String> returnTypes, SymbolKind kind) {
+    public Symbol(String name, List<Type> paramTypes, List<Type> returnTypes, SymbolKind kind) {
         this.name = name;
         this.kind = kind;
         this.paramTypes = paramTypes;
@@ -26,7 +37,7 @@ public class Symbol {
     }
 
     // Costruttore per procedure
-    public Symbol(String name, SymbolKind kind, List<String> paramTypes, List<Boolean> isOutParams) {
+    public Symbol(String name, SymbolKind kind, List<Type> paramTypes, List<Boolean> isOutParams) {
         this.name = name;
         this.kind = kind;
         this.paramTypes = paramTypes;
@@ -35,14 +46,19 @@ public class Symbol {
 
     // Getter e Setter
     public String getName() { return name; }
-    public String getType() { return type; }
+    public Type getType() { return type; }
     public SymbolKind getKind() { return kind; }
-    public List<String> getParamTypes() { return paramTypes; }
-    public void setParamTypes(List<String> paramTypes) { this.paramTypes = paramTypes; }
+    public List<Type> getParamTypes() { return paramTypes; }
+    public void setParamTypes(List<Type> paramTypes) { this.paramTypes = paramTypes; }
     public List<Boolean> getIsOutParams() { return isOutParams; }
     public void setIsOutParams(List<Boolean> isOutParams) { this.isOutParams = isOutParams; }
-    public List<String> getReturnTypes() { return returnTypes; }
-    public void setReturnTypes(List<String> returnTypes) { this.returnTypes = returnTypes; }
+    public List<Type> getReturnTypes() { return returnTypes; }
+    public void setReturnTypes(List<Type> returnTypes) { this.returnTypes = returnTypes; }
+
+    public boolean isParameter() {
+        return isParameter;
+    }
+    public void setIsParameter(boolean parameter) {isParameter = parameter; }
 
     @Override
     public String toString() {
@@ -50,9 +66,11 @@ public class Symbol {
                 "name='" + name + '\'' +
                 ", type='" + type + '\'' +
                 ", kind=" + kind +
+                ", isParameter=" + isParameter +
                 ", paramTypes=" + paramTypes +
                 ", isOutParams=" + isOutParams +
                 ", returnTypes=" + returnTypes +
                 "}" + "\n" ;
     }
+
 }

@@ -3,12 +3,13 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 public class ParamNode implements Visitable {
     private String name;
-    private String type;
+    private Type type;
 
-    public ParamNode(String name, String type) {
+    public ParamNode(String name, Type type) {
         this.name = name;
         this.type = type;
     }
@@ -18,7 +19,7 @@ public class ParamNode implements Visitable {
         return name;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 

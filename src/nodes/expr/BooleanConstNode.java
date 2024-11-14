@@ -2,9 +2,11 @@ package nodes.expr;
 
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 public class BooleanConstNode implements ExprNode {
     private boolean value;
+    private Type type;
 
     public BooleanConstNode(boolean value) {
         this.value = value;
@@ -12,6 +14,16 @@ public class BooleanConstNode implements ExprNode {
 
     public boolean getValue() {
         return value;
+    }
+
+    @Override
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

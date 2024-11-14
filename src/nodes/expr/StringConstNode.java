@@ -2,9 +2,11 @@ package nodes.expr;
 
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 public class StringConstNode implements ExprNode {
     private String value;
+    private Type type;
 
     public StringConstNode(String value) {
         this.value = value;
@@ -12,6 +14,16 @@ public class StringConstNode implements ExprNode {
 
     public String getValue() {
         return value;
+    }
+
+    @Override
+    public Type getType() {
+        return type;
+    }
+
+    @Override
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

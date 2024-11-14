@@ -3,14 +3,16 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
+
 import java.util.List;
 
 public class DeclNode implements Visitable {
     private List<String> ids;
-    private String type; // Può essere null se non specificato
+    private Type type; // Può essere null se non specificato
     private List<ConstNode> consts; // Può essere null se non specificato
 
-    public DeclNode(List<String> ids, String type, List<ConstNode> consts) {
+    public DeclNode(List<String> ids, Type type, List<ConstNode> consts) {
         this.ids = ids;
         this.type = type;
         this.consts = consts;
@@ -20,7 +22,7 @@ public class DeclNode implements Visitable {
         return ids;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 

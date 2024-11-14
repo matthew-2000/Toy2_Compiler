@@ -3,13 +3,14 @@ package nodes;
 import visitor.Visitable;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 public class ProcParamNode implements Visitable {
     private String name;
-    private String type;
+    private Type type;
     private boolean isOut;
 
-    public ProcParamNode(String name, String type, boolean isOut) {
+    public ProcParamNode(String name, Type type, boolean isOut) {
         this.name = name;
         this.type = type;
         this.isOut = isOut;
@@ -20,7 +21,7 @@ public class ProcParamNode implements Visitable {
         return name;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 

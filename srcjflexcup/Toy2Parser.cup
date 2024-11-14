@@ -1,4 +1,5 @@
 import nodes.*;
+import visitor.utils.*;
 import nodes.stat.*;
 import nodes.expr.*;
 import visitor.Visitable;
@@ -144,7 +145,7 @@ Decls ::= Ids:ids COLON Type:type SEMI Decls:nextDecls
     // Crea un DeclNode per questa dichiarazione
     DeclNode declNode = new DeclNode(
         (List<String>) ids,
-        (String) type,
+        (Type) type,
         null // Nessuna costante
     );
     // Aggiungi questa dichiarazione alla lista
@@ -174,7 +175,7 @@ Decls ::= Ids:ids COLON Type:type SEMI Decls:nextDecls
     // Crea un DeclNode per questa dichiarazione
     DeclNode declNode = new DeclNode(
         (List<String>) ids,
-        (String) type,
+        (Type) type,
         null // Nessuna costante
     );
     // Crea una lista con questa dichiarazione
@@ -260,19 +261,19 @@ Const ::= REAL_CONST:realConst
 /* Definizione di un tipo */
 Type ::= REAL
 {:
-    RESULT = "real";
+    RESULT = Type.REAL;
 :}
 | INTEGER
 {:
-    RESULT = "integer";
+    RESULT = Type.INTEGER;
 :}
 | STRING
 {:
-    RESULT = "string";
+    RESULT = Type.STRING;
 :}
 | BOOLEAN
 {:
-    RESULT = "boolean";
+    RESULT = Type.BOOLEAN;
 :};
 
 /* Definizione di una funzione */
@@ -282,7 +283,7 @@ Function ::= FUNC IDENTIFIER:funcName LPAR FuncParams:params RPAR TYPERETURN Typ
     FunctionNode functionNode = new FunctionNode(
         (String) funcName,
         (FuncParamsNode) params,
-        (List<String>) returnType,
+        (List<Type>) returnType,
         (BodyNode) body
     );
     RESULT = functionNode;
@@ -293,7 +294,7 @@ FuncParams ::= IDENTIFIER:id COLON Type:type OtherFuncParams:otherParams
 {:
     // Crea una lista di parametri iniziando con questo
     List<ParamNode> params = new ArrayList<>();
-    ParamNode paramNode = new ParamNode((String) id, (String) type);
+    ParamNode paramNode = new ParamNode((String) id, (Type) type);
     params.add(paramNode);
     params.addAll((List<ParamNode>) otherParams);
     FuncParamsNode funcParamsNode = new FuncParamsNode(params);
@@ -311,7 +312,7 @@ OtherFuncParams ::= COMMA IDENTIFIER:id COLON Type:type OtherFuncParams:otherPar
 {:
     // Crea una lista di parametri aggiuntivi
     List<ParamNode> params = new ArrayList<>();
-    ParamNode paramNode = new ParamNode((String) id, (String) type);
+    ParamNode paramNode = new ParamNode((String) id, (Type) type);
     params.add(paramNode);
     params.addAll((List<ParamNode>) otherParams);
     RESULT = params;
@@ -326,16 +327,16 @@ OtherFuncParams ::= COMMA IDENTIFIER:id COLON Type:type OtherFuncParams:otherPar
 Types ::= Type:type COMMA Types:nextTypes
 {:
     // Crea una lista di tipi di ritorno
-    List<String> types = new ArrayList<>();
-    types.add((String) type);
-    types.addAll((List<String>) nextTypes);
+    List<Type> types = new ArrayList<>();
+    types.add((Type) type);
+    types.addAll((List<Type>) nextTypes);
     RESULT = types;
 :}
 | Type:type
 {:
     // Crea una lista con un singolo tipo di ritorno
-    List<String> types = new ArrayList<>();
-    types.add((String) type);
+    List<Type> types = new ArrayList<>();
+    types.add((Type) type);
     RESULT = types;
 :};
 
@@ -359,7 +360,7 @@ ProcParams ::= ProcParamId:paramId COLON Type:type OtherProcParams:otherParams
     ProcParamIdNode procParamIdNode = (ProcParamIdNode) paramId;
     ProcParamNode paramNode = new ProcParamNode(
         (String) procParamIdNode.name,
-        (String) type,
+        (Type) type,
         procParamIdNode.isOut
     );
     params.add(paramNode);
@@ -382,7 +383,7 @@ OtherProcParams ::= COMMA ProcParamId:paramId COLON Type:type OtherProcParams:ot
     ProcParamIdNode procParamIdNode = (ProcParamIdNode) paramId;
     ProcParamNode paramNode = new ProcParamNode(
         (String) procParamIdNode.name,
-        (String) type,
+        (Type) type,
         procParamIdNode.isOut
     );
     params.add(paramNode);

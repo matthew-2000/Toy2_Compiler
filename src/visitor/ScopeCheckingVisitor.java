@@ -8,6 +8,7 @@ import visitor.exception.SemanticException;
 import visitor.symbolTable.Symbol;
 import visitor.symbolTable.SymbolKind;
 import visitor.symbolTable.SymbolTableManager;
+import visitor.utils.Type;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,13 +84,13 @@ public class ScopeCheckingVisitor implements Visitor {
     @Override
     public Void visit(DeclNode node) throws SemanticException {
         List<String> ids = node.getIds();
-        String type = node.getType();
+        Type type = node.getType();
         List<ConstNode> consts = node.getConsts();
 
         // Dichiarazione delle variabili
         for (String id : ids) {
             // Verifica se la variabile è già dichiarata nello scope corrente
-            boolean success = symbolTableManager.addSymbol(id, type != null ? type : "inferred", SymbolKind.VARIABLE);
+            boolean success = symbolTableManager.addSymbol(id, type != null ? type : Type.UNKNOWN, SymbolKind.VARIABLE);
             if (!success) {
                 throw new SemanticException("Variabile '" + id + "' già dichiarata nello scope corrente.");
             }
@@ -137,9 +138,9 @@ public class ScopeCheckingVisitor implements Visitor {
         symbolTableManager.enterScope(node.getName() + "_FUNCTION_NODE");
 
         // Visita i parametri per aggiungerli allo scope corrente e raccogliere i tipi
-        List<String> paramTypes = new ArrayList<>();
+        List<Type> paramTypes = new ArrayList<>();
         if (node.getParams() != null) {
-            paramTypes = (List<String>) node.getParams().accept(this);
+            paramTypes = (List<Type>) node.getParams().accept(this);
         }
 
         // Aggiorna i tipi dei parametri nella funzione corrente
@@ -158,9 +159,9 @@ public class ScopeCheckingVisitor implements Visitor {
 
     @Override
     public Object visit(FuncParamsNode node) throws SemanticException {
-        List<String> paramTypes = new ArrayList<>();
+        List<Type> paramTypes = new ArrayList<>();
         for (ParamNode param : node.getParams()) {
-            paramTypes.add((String) param.accept(this));
+            paramTypes.add((Type) param.accept(this));
         }
         return paramTypes;
     }
@@ -169,6 +170,7 @@ public class ScopeCheckingVisitor implements Visitor {
     public Object visit(ParamNode node) throws SemanticException {
         // Aggiungi il parametro alla tabella dei simboli dello scope corrente
         boolean success = symbolTableManager.addSymbol(node.getName(), node.getType(), SymbolKind.VARIABLE);
+        symbolTableManager.lookup(node.getName()).setIsParameter(true);
         if (!success) {
             throw new SemanticException("Parametro '" + node.getName() + "' già dichiarato nello scope corrente.");
         }
@@ -191,7 +193,7 @@ public class ScopeCheckingVisitor implements Visitor {
         symbolTableManager.enterScope(node.getName() + "_PROC_NODE");
 
         // Visita i parametri per aggiungerli allo scope corrente e raccogliere i tipi e i flag isOut
-        List<String> paramTypes = new ArrayList<>();
+        List<Type> paramTypes = new ArrayList<>();
         List<Boolean> isOutParams = new ArrayList<>();
         if (node.getParams() != null) {
             for (ProcParamNode param : node.getParams().getParams()) {
@@ -217,7 +219,7 @@ public class ScopeCheckingVisitor implements Visitor {
 
     @Override
     public Void visit(ProcParamsNode node) throws SemanticException {
-        List<String> paramTypes = new ArrayList<>();
+        List<Type> paramTypes = new ArrayList<>();
         List<Boolean> isOutParams = new ArrayList<>();
 
         for (ProcParamNode param : node.getParams()) {
@@ -292,7 +294,7 @@ public class ScopeCheckingVisitor implements Visitor {
             throw new SemanticException("Istruzione 'return' non permessa al di fuori di una funzione.");
         }
 
-        List<String> returnTypes = currentFunction.getReturnTypes();
+        List<Type> returnTypes = currentFunction.getReturnTypes();
         List<ExprNode> exprs = node.getExprs();
 
         // Verifica che il numero di espressioni restituite corrisponda ai tipi di ritorno
