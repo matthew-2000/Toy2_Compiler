@@ -11,7 +11,7 @@ import visitor.exception.SemanticException;
 public class Main {
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test1.txt";
+        String filePath = "test/test5.txt";
 
         // Tentiamo di aprire il file di input
         try {

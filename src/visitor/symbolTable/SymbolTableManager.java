@@ -9,17 +9,19 @@ public class SymbolTableManager {
 
     public SymbolTableManager() {
         scopeStack = new Stack<>();
-        scopeStack.push(new SymbolTable(null));  // Tabella globale (senza genitore)
+        scopeStack.push(new SymbolTable(null, "GLOBAL"));  // Tabella globale (senza genitore)
     }
 
     // Entra in un nuovo scope
-    public void enterScope() {
-        SymbolTable newScope = new SymbolTable(scopeStack.peek());
+    public void enterScope(String scopeName) {
+        SymbolTable newScope = new SymbolTable(scopeStack.peek(), scopeName);
         scopeStack.push(newScope);
     }
 
     // Esci dallo scope corrente
     public void exitScope() {
+        System.out.println("==== EXIT SCOPE ====");
+        System.out.println(scopeStack.peek().toString());
         if (!scopeStack.isEmpty()) {
             scopeStack.pop();
             // Se stiamo uscendo dallo scope di una funzione o procedura, aggiorniamo il simbolo corrente

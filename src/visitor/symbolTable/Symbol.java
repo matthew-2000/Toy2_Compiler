@@ -43,4 +43,16 @@ public class Symbol {
     public void setIsOutParams(List<Boolean> isOutParams) { this.isOutParams = isOutParams; }
     public List<String> getReturnTypes() { return returnTypes; }
     public void setReturnTypes(List<String> returnTypes) { this.returnTypes = returnTypes; }
+
+    @Override
+    public String toString() {
+        return "Symbol{" +
+                "name='" + name + '\'' +
+                ", type='" + type + '\'' +
+                ", kind=" + kind +
+                ", paramTypes=" + paramTypes +
+                ", isOutParams=" + isOutParams +
+                ", returnTypes=" + returnTypes +
+                '}' + "\n" ;
+    }
 }

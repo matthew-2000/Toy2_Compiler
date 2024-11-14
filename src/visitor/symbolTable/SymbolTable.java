@@ -4,12 +4,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class SymbolTable {
+    private String symbolTableName;
     private Map<String, Symbol> symbols;
     private SymbolTable parent;
 
-    public SymbolTable(SymbolTable parent) {
+    public SymbolTable(SymbolTable parent, String symbolTableName) {
         this.symbols = new HashMap<>();
         this.parent = parent;  // Riferimento alla tabella padre per risalire nella catena
+        this.symbolTableName = symbolTableName;
     }
 
     // Aggiunge un simbolo alla tabella
@@ -35,5 +37,14 @@ public class SymbolTable {
     // Getter per il parent (potrebbe essere utile)
     public SymbolTable getParent() {
         return parent;
+    }
+
+    @Override
+    public String toString() {
+        return "SymbolTable{" +
+                "symbolTableName='" + symbolTableName + '\'' +
+                ", symbols=" + symbols +
+                ", parent=" + parent.symbolTableName +
+                '}';
     }
 }

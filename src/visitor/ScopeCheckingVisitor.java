@@ -22,7 +22,7 @@ public class ScopeCheckingVisitor implements Visitor {
     @Override
     public Object visit(ProgramNode node) throws SemanticException {
         // Entra nello scope globale
-        symbolTableManager.enterScope();
+        symbolTableManager.enterScope("PROGRAM_NODE");
 
         // Visita le dichiarazioni prima della procedura obbligatoria
         if (node.getItersWithoutProcedure() != null) {
@@ -133,7 +133,7 @@ public class ScopeCheckingVisitor implements Visitor {
         }
 
         // Entra nello scope della funzione
-        symbolTableManager.enterScope();
+        symbolTableManager.enterScope(node.getName() + "_FUNCTION_NODE");
 
         // Visita i parametri per aggiungerli allo scope corrente e raccogliere i tipi
         List<String> paramTypes = new ArrayList<>();
@@ -187,7 +187,7 @@ public class ScopeCheckingVisitor implements Visitor {
         }
 
         // Entra nello scope della procedura
-        symbolTableManager.enterScope();
+        symbolTableManager.enterScope(node.getName() + "_PROC_NODE");
 
         // Visita i parametri per aggiungerli allo scope corrente e raccogliere i tipi e i flag isOut
         List<String> paramTypes = new ArrayList<>();
@@ -386,7 +386,10 @@ public class ScopeCheckingVisitor implements Visitor {
     @Override
     public Void visit(IfStatNode node) throws SemanticException {
         node.getCondition().accept(this);
+
+        symbolTableManager.enterScope("IF_NODE");
         node.getThenBody().accept(this);
+        symbolTableManager.exitScope();
 
         for (ElifNode elif : node.getElifBlocks()) {
             elif.accept(this);
@@ -405,7 +408,7 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getCondition().accept(this);
 
         // Entra in un nuovo scope per il corpo dell'Elif
-        symbolTableManager.enterScope();
+        symbolTableManager.enterScope("ELIF_NODE");
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
@@ -415,7 +418,7 @@ public class ScopeCheckingVisitor implements Visitor {
     @Override
     public Void visit(ElseNode node) throws SemanticException {
         // Entra in un nuovo scope per il corpo dell'Else
-        symbolTableManager.enterScope();
+        symbolTableManager.enterScope("ELSE_NODE");
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
@@ -427,7 +430,7 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getCondition().accept(this);
 
         // Entra in un nuovo scope per il corpo del loop
-        symbolTableManager.enterScope();
+        symbolTableManager.enterScope("WHILE_NODE");
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
