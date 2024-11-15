@@ -118,8 +118,8 @@ public class TypeCheckingVisitor implements Visitor {
         }
 
         // Visita il corpo della funzione, che deve restituire un tipo compatibile con il tipo di ritorno
-        Type bodyType = (Type) node.getBody().accept(this);
-        if (!returnTypes.contains(bodyType)) {
+        List<Type> bodyType = (List<Type>) node.getBody().accept(this);
+        if (!returnTypes.equals(bodyType)) {
             throw new SemanticException("Tipo di ritorno non compatibile nella funzione '" + node.getName() + "'. Atteso: " + returnTypes + ", trovato: " + bodyType);
         }
 
@@ -181,12 +181,17 @@ public class TypeCheckingVisitor implements Visitor {
     }
 
     @Override
-    public Type visit(BodyNode node) throws SemanticException {
+    public List<Type> visit(BodyNode node) throws SemanticException {
         // Itera attraverso ogni dichiarazione o istruzione nel corpo
         for (Visitable statement : node.getStatements()) {
+
+            if (statement instanceof ReturnStatNode) {
+                return (List<Type>) statement.accept(this);
+            }
+
             Type type = (Type) statement.accept(this); // Visita ogni dichiarazione/istruzione
             // Controlla che ogni istruzione sia valida secondo le regole del tipo
-            if (type != null) {
+            if (type != null && type != Type.UNKNOWN) {
                 throw new SemanticException("Errore di tipo nel corpo della procedura/funzione.");
             }
         }
@@ -209,15 +214,40 @@ public class TypeCheckingVisitor implements Visitor {
 
             // Controlla la dichiarazione dell'identificatore
             Symbol symbol = currentScope.lookup(id);
+            if (symbol == null) {
+                throw new SemanticException("Identificatore '" + id + "' non dichiarato.");
+            }
 
-            // Visita l'espressione
-            Type exprType = (Type) expr.accept(this);
-            expr.setType(exprType);
+            // Gestione del caso di FunCallNode che restituisce più tipi
+            if (expr instanceof FunCallNode) {
+                FunCallNode funcCall = (FunCallNode) expr;
 
-            // Verifica la compatibilità dei tipi
-            Type idType = symbol.getType();
-            if (idType != exprType) {
-                throw new SemanticException("Assegnazione a '" + id + "' non compatibile: " + idType + " := " + exprType);
+                // Ottieni i tipi restituiti dalla funzione
+                List<Type> returnTypes = (List<Type>) funcCall.accept(this);
+
+                // Assicurati che ci sia corrispondenza nel numero di tipi
+                if (returnTypes.size() != ids.size()) {
+                    throw new SemanticException("Numero di valori restituiti dalla funzione '" +
+                            funcCall.getFunctionName() + "' non corrisponde al numero di variabili.");
+                }
+
+                // Verifica i tipi restituiti dalla funzione per ciascun identificatore
+                for (int j = 0; j < returnTypes.size(); j++) {
+                    Type idType = currentScope.lookup(ids.get(j)).getType();
+                    Type returnType = returnTypes.get(j);
+
+                    if (idType != returnType) {
+                        throw new SemanticException("Tipo non compatibile per '" + ids.get(j) +
+                                "': atteso " + idType + ", trovato " + returnType + ".");
+                    }
+                }
+            } else {
+                // Caso standard: espressione singola restituisce un tipo
+                Type exprType = (Type) expr.accept(this);
+                Type idType = symbol.getType();
+                if (idType != exprType) {
+                    throw new SemanticException("Assegnazione a '" + id + "' non compatibile: " + idType + " := " + exprType);
+                }
             }
 
             // Controllo dell'immutabilità se è un parametro
@@ -255,15 +285,17 @@ public class TypeCheckingVisitor implements Visitor {
     }
 
     @Override
-    public Type visit(ReturnStatNode node) throws SemanticException {
+    public List<Type> visit(ReturnStatNode node) throws SemanticException {
         List<ExprNode> exprs = node.getExprs();
+        List<Type> returnTypes = new ArrayList<>();
         for (ExprNode expr : exprs) {
             Type exprType = (Type) expr.accept(this);
             if (exprType == Type.ERROR) {
                 throw new SemanticException("Tipo errato nell'espressione di ritorno.");
             }
+            returnTypes.add(exprType);
         }
-        return null; // Non ha un tipo specifico
+        return returnTypes; // Non ha un tipo specifico
     }
 
     @Override

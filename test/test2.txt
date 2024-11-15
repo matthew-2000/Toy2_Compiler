@@ -7,8 +7,8 @@ proc main(out a: integer, b: integer):
 endproc
 
 func somma(a:integer, b:integer)-> integer:
-    a ^= a + b; %DEVE DARE ERRORE NEL TYPE CHECKING - I PARAM SONO IMMUTABILI %
-    return a;
+     a ^= a + b; % DEVE DARE ERRORE NEL TYPE CHECKING - I PARAM SONO IMMUTABILI %
+    return a + b;
 endfunc
 
 var d : integer;\
