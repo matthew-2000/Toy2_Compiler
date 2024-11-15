@@ -492,7 +492,7 @@ FunCall ::= IDENTIFIER:funcName LPAR Exprs:args RPAR
 /* Chiamate a procedura */
 ProcCall ::= IDENTIFIER:procName LPAR ProcExprs:args RPAR
 {:
-    ProcCallNode procCallNode = new ProcCallNode((String) procName, (List<ExprNode>) args);
+    ProcCallNode procCallNode = new ProcCallNode((String) procName, (List<ProcExprNode>) args);
     RESULT = procCallNode;
 :}
 | IDENTIFIER:procName LPAR RPAR

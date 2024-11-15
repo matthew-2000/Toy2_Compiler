@@ -8,9 +8,9 @@ import java.util.List;
 
 public class ProcCallNode implements Visitable {
     private String procedureName;
-    private List<ExprNode> arguments;
+    private List<ProcExprNode> arguments;
 
-    public ProcCallNode(String procedureName, List<ExprNode> arguments) {
+    public ProcCallNode(String procedureName, List<ProcExprNode> arguments) {
         this.procedureName = procedureName;
         this.arguments = arguments;
     }
@@ -19,7 +19,7 @@ public class ProcCallNode implements Visitable {
         return procedureName;
     }
 
-    public List<ExprNode> getArguments() {
+    public List<ProcExprNode> getArguments() {
         return arguments;
     }
 

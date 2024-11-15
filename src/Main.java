@@ -6,7 +6,9 @@ import nodes.ProgramNode;
 import unisa.compilatori.parser;
 import unisa.compilatori.sym;
 import visitor.ScopeCheckingVisitor;
+import visitor.TypeCheckingVisitor;
 import visitor.exception.SemanticException;
+import visitor.symbolTable.SymbolTableManager;
 
 public class Main {
     public static void main(String[] args) {
@@ -39,13 +41,20 @@ public class Main {
             ProgramNode programNode = (ProgramNode) parser.parse().value;
             System.out.println("=== Parsing completato con successo! ===");
 
-            // Creazione del visitor per lo scope checking
-            ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor();
+            // Creazione dei visitor
+            SymbolTableManager symbolTableManager = new SymbolTableManager();
+            ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor(symbolTableManager);
+            TypeCheckingVisitor typeCheckingVisitor = new TypeCheckingVisitor(symbolTableManager);
 
             // Esecuzione del visitor sul nodo del programma
             System.out.println("\n=== Avvio dello scope checking ===");
             programNode.accept(scopeCheckingVisitor);
             System.out.println("=== Scope checking completato con successo! ===");
+
+            // Esecuzione del visitor sul nodo del programma
+            System.out.println("\n=== Avvio del type checking ===");
+            programNode.accept(typeCheckingVisitor);
+            System.out.println("=== Type checking completato con successo! ===");
 
         } catch (FileNotFoundException e) {
             System.err.println("Errore: il file " + filePath + " non è stato trovato.");

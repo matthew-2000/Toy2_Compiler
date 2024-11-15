@@ -1,37 +1,37 @@
 package visitor.symbolTable;
 
+import visitor.Visitable;
 import visitor.exception.SemanticException;
 import visitor.utils.Type;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Stack;
 import java.util.List;
 
 public class SymbolTableManager {
     private Stack<SymbolTable> scopeStack;
     private Symbol currentProcedureOrFunctionSymbol;
+    private Map<Visitable, SymbolTable> scopeMap;  // Mappa ogni nodo AST con la sua SymbolTable
 
     public SymbolTableManager() {
         scopeStack = new Stack<>();
+        scopeMap = new HashMap<>();
         scopeStack.push(new SymbolTable(null, "GLOBAL"));  // Tabella globale (senza genitore)
     }
 
     // Entra in un nuovo scope
-    public void enterScope() {
-        SymbolTable newScope = new SymbolTable(scopeStack.peek(), "");
-        scopeStack.push(newScope);
-    }
-
-    // Entra in un nuovo scope
-    public void enterScope(String scopeName) {
+    public void enterScope(String scopeName, Visitable node) {
         SymbolTable newScope = new SymbolTable(scopeStack.peek(), scopeName);
         scopeStack.push(newScope);
+        scopeMap.put(node, newScope);  // Associa il nodo AST alla nuova SymbolTable
     }
 
     // Esci dallo scope corrente
     public void exitScope() throws SemanticException {
 
-        System.out.println("==== EXIT SCOPE ====");
-        System.out.println(scopeStack.peek().toString());
+//        System.out.println("==== EXIT SCOPE ====");
+//        System.out.println(scopeStack.peek().toString());
 
         if (!scopeStack.isEmpty()) {
             SymbolTable currentTable = scopeStack.pop();
@@ -50,6 +50,10 @@ public class SymbolTableManager {
                 }
             }
         }
+    }
+
+    public SymbolTable getScope(Visitable node) {
+        return scopeMap.get(node);  // Ottiene la SymbolTable associata al nodo
     }
 
     // Aggiungi un simbolo allo scope corrente (variabile)

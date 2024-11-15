@@ -16,14 +16,14 @@ import java.util.List;
 public class ScopeCheckingVisitor implements Visitor {
     private SymbolTableManager symbolTableManager;
 
-    public ScopeCheckingVisitor() {
-        this.symbolTableManager = new SymbolTableManager();
+    public ScopeCheckingVisitor(SymbolTableManager symbolTableManager) {
+        this.symbolTableManager = symbolTableManager;
     }
 
     @Override
     public Object visit(ProgramNode node) throws SemanticException {
         // Entra nello scope globale
-        symbolTableManager.enterScope("PROGRAM_NODE");
+        symbolTableManager.enterScope("PROGRAM_NODE", node);
 
         // Visita le dichiarazioni prima della procedura obbligatoria
         if (node.getItersWithoutProcedure() != null) {
@@ -135,7 +135,7 @@ public class ScopeCheckingVisitor implements Visitor {
         }
 
         // Entra nello scope della funzione
-        symbolTableManager.enterScope(node.getName() + "_FUNCTION_NODE");
+        symbolTableManager.enterScope(node.getName() + "_FUNCTION_NODE", node);
 
         // Visita i parametri per aggiungerli allo scope corrente e raccogliere i tipi
         List<Type> paramTypes = new ArrayList<>();
@@ -170,10 +170,10 @@ public class ScopeCheckingVisitor implements Visitor {
     public Object visit(ParamNode node) throws SemanticException {
         // Aggiungi il parametro alla tabella dei simboli dello scope corrente
         boolean success = symbolTableManager.addSymbol(node.getName(), node.getType(), SymbolKind.VARIABLE);
-        symbolTableManager.lookup(node.getName()).setIsParameter(true);
         if (!success) {
             throw new SemanticException("Parametro '" + node.getName() + "' già dichiarato nello scope corrente.");
         }
+        symbolTableManager.lookup(node.getName()).setIsParameter(true);
         return node.getType();
     }
 
@@ -190,7 +190,7 @@ public class ScopeCheckingVisitor implements Visitor {
         }
 
         // Entra nello scope della procedura
-        symbolTableManager.enterScope(node.getName() + "_PROC_NODE");
+        symbolTableManager.enterScope(node.getName() + "_PROC_NODE", node);
 
         // Visita i parametri per aggiungerli allo scope corrente e raccogliere i tipi e i flag isOut
         List<Type> paramTypes = new ArrayList<>();
@@ -371,7 +371,7 @@ public class ScopeCheckingVisitor implements Visitor {
             throw new SemanticException("Identificatore '" + procName + "' non è una procedura.");
         }
 
-        List<ExprNode> args = node.getArguments();
+        List<ProcExprNode> args = node.getArguments();
 
         // Visita gli argomenti e verifica i tipi
         for (int i = 0; i < args.size(); i++) {
@@ -387,7 +387,7 @@ public class ScopeCheckingVisitor implements Visitor {
     public Void visit(IfStatNode node) throws SemanticException {
         node.getCondition().accept(this);
 
-        symbolTableManager.enterScope("IF_NODE");
+        symbolTableManager.enterScope("IF_NODE", node);
         node.getThenBody().accept(this);
         symbolTableManager.exitScope();
 
@@ -408,7 +408,7 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getCondition().accept(this);
 
         // Entra in un nuovo scope per il corpo dell'Elif
-        symbolTableManager.enterScope("ELIF_NODE");
+        symbolTableManager.enterScope("ELIF_NODE", node);
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
@@ -418,7 +418,7 @@ public class ScopeCheckingVisitor implements Visitor {
     @Override
     public Void visit(ElseNode node) throws SemanticException {
         // Entra in un nuovo scope per il corpo dell'Else
-        symbolTableManager.enterScope("ELSE_NODE");
+        symbolTableManager.enterScope("ELSE_NODE", node);
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
@@ -430,7 +430,7 @@ public class ScopeCheckingVisitor implements Visitor {
         node.getCondition().accept(this);
 
         // Entra in un nuovo scope per il corpo del loop
-        symbolTableManager.enterScope("WHILE_NODE");
+        symbolTableManager.enterScope("WHILE_NODE", node);
         node.getBody().accept(this);
         symbolTableManager.exitScope();
 
