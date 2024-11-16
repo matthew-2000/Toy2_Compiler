@@ -84,12 +84,16 @@ public class ScopeCheckingVisitor implements Visitor {
     @Override
     public Void visit(DeclNode node) throws SemanticException {
         List<String> ids = node.getIds();
-        Type type = node.getType();
         List<ConstNode> consts = node.getConsts();
 
         // Dichiarazione delle variabili
-        for (String id : ids) {
+        for (int i = 0; i < ids.size(); i++) {
             // Verifica se la variabile è già dichiarata nello scope corrente
+            Type type = node.getType();
+            String id = ids.get(i);
+            if (type == null && consts.get(i) != null) {
+                type = consts.get(i).getType();
+            }
             boolean success = symbolTableManager.addSymbol(id, type != null ? type : Type.UNKNOWN, SymbolKind.VARIABLE);
             if (!success) {
                 throw new SemanticException("Variabile '" + id + "' già dichiarata nello scope corrente.");
