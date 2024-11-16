@@ -102,13 +102,10 @@ public class ScopeCheckingVisitor implements Visitor {
             if (consts.size() != ids.size()) {
                 throw new SemanticException("Il numero di costanti non corrisponde al numero di variabili dichiarate.");
             }
-
             // Visita le costanti
             for (ConstNode constNode : consts) {
                 constNode.accept(this);
             }
-
-            // Ulteriori controlli sui tipi possono essere aggiunti qui
         }
 
         return null;

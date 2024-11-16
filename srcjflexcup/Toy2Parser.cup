@@ -234,27 +234,27 @@ Consts ::= Const:constant COMMA Consts:nextConsts
 /* Definizione di una costante */
 Const ::= REAL_CONST:realConst
 {:
-    ConstNode constNode = new ConstNode(Double.parseDouble((String) realConst));
+    ConstNode constNode = new ConstNode(Double.parseDouble((String) realConst), Type.REAL);
     RESULT = constNode;
 :}
 | NUMBER_LITERAL:number
 {:
-    ConstNode constNode = new ConstNode(Integer.parseInt((String) number));
+    ConstNode constNode = new ConstNode(Integer.parseInt((String) number), Type.INTEGER);
     RESULT = constNode;
 :}
 | STRING_LITERAL:stringLiteral
 {:
-    ConstNode constNode = new ConstNode((String) stringLiteral);
+    ConstNode constNode = new ConstNode((String) stringLiteral, Type.STRING);
     RESULT = constNode;
 :}
 | TRUE
 {:
-    ConstNode constNode = new ConstNode(true);
+    ConstNode constNode = new ConstNode(true, Type.BOOLEAN);
     RESULT = constNode;
 :}
 | FALSE
 {:
-    ConstNode constNode = new ConstNode(false);
+    ConstNode constNode = new ConstNode(false, Type.BOOLEAN);
     RESULT = constNode;
 :};
 

@@ -77,13 +77,13 @@ public class TypeCheckingVisitor implements Visitor {
 
     @Override
     public Type visit(DeclNode node) throws SemanticException {
-        Type declaredType = node.getType(); // Ottiene il tipo dichiarato
-
         if (node.getConsts() != null) {
-            for (ConstNode constNode : node.getConsts()) {
-                Type constType = (Type) constNode.accept(this); // Verifica il tipo della costante
-                if (!constType.equals(declaredType)) {
-                    throw new SemanticException("Type mismatch per '" + constNode.getValue() + "'. Atteso: " + declaredType + ", trovato: " + constType);
+            List<Type> declaredTypes = node.getConstsType(); // Ottiene il tipo dichiarato
+            List<ConstNode> constNodes = node.getConsts();
+            for (int i = 0; i < declaredTypes.size(); i++) {
+                Type constType = (Type) constNodes.get(i).accept(this); // Verifica il tipo della costante
+                if (!constType.equals(declaredTypes.get(i))) {
+                    throw new SemanticException("Type mismatch per '" + constNodes.get(i).getValue() + "'. Atteso: " + declaredTypes.get(i) + ", trovato: " + constType);
                 }
             }
         }
