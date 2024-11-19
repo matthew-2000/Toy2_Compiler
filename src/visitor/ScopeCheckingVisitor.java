@@ -146,6 +146,7 @@ public class ScopeCheckingVisitor implements Visitor {
 
         // Aggiorna i tipi dei parametri nella funzione corrente
         symbolTableManager.updateCurrentProcedureOrFunctionParams(paramTypes, null);
+        symbolTableManager.updateCurrentFunctionReturnTypes(node.getReturnTypes());
 
         // Visita il corpo della funzione
         if (node.getBody() != null) {
@@ -447,8 +448,9 @@ public class ScopeCheckingVisitor implements Visitor {
             symbolTableManager.addUnresolvedReference(funcName);
         } else if (symbol.getKind() != SymbolKind.FUNCTION) {
             throw new SemanticException("Identificatore '" + funcName + "' non è una funzione.");
+        } else {
+            node.setReturnTypes(symbol.getReturnTypes());
         }
-        node.setReturnTypes(symbol.getReturnTypes());
 
         List<ExprNode> args = node.getArguments();
 

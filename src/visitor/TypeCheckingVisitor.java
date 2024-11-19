@@ -487,8 +487,13 @@ public class TypeCheckingVisitor implements Visitor {
         if (exprNode instanceof FunCallNode) {
             FunCallNode funCallNode = (FunCallNode) exprNode;
             List<Type> returnTypes = funCallNode.getReturnTypes();
-            if (returnTypes.isEmpty() ) {
-                throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " non ha tipi di ritorno. ");
+            if (returnTypes == null || returnTypes.isEmpty()) {
+                Symbol symbol = currentScope.lookup(funCallNode.getFunctionName());
+                if (symbol.getReturnTypes() == null || symbol.getReturnTypes().isEmpty()) {
+                    throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " non ha tipi di ritorno. ");
+                } else {
+                    return symbol.getReturnTypes().get(0);
+                }
             }
             if (returnTypes.size() != 1) {
                 throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " ha più tipi di ritorno.");
