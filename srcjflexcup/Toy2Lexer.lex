@@ -30,6 +30,9 @@ WhiteSpace = {LineTerminator} | [ \t\f]
         String errorMsg = "Error at line " + (yyline + 1) + ", column " + (yycolumn + 1) + ": " + message;
         return new Symbol(sym.EOF, yyline + 1, yycolumn + 1, errorMsg);
     }
+
+    private StringBuilder stringBuffer = new StringBuilder();
+
 %}
 
 /* Stati per la gestione delle stringhe e dei commenti */
@@ -102,9 +105,10 @@ WhiteSpace = {LineTerminator} | [ \t\f]
 <COMMENT>  "%"            { yybegin(YYINITIAL); }
 
 /* Gestione delle stringhe */
-<YYINITIAL> \"            { yybegin(STRING); }
-<STRING>   [^\"]+         { /* Accetta il contenuto della stringa */ }
-<STRING>   \"             { yybegin(YYINITIAL); return symbol(sym.STRING_LITERAL, yytext()); }
+<YYINITIAL> \"            { stringBuffer.setLength(0); yybegin(STRING); } // Inizia una nuova stringa
+<STRING>   [^\"]+         { stringBuffer.append(yytext()); }             // Accumula i caratteri della stringa
+<STRING>   \"             { yybegin(YYINITIAL);                          // Termina la stringa
+                            return symbol(sym.STRING_LITERAL, stringBuffer.toString()); }
 <STRING>   \n             { throw new Error("Stringa costante non completata"); }
 
 /* Gestione EOF*/

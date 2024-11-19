@@ -598,8 +598,10 @@ public class TypeCheckingVisitor implements Visitor {
             case "*":
             case "/":
                 if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
-                    return Type.INTEGER;
-                } else if (leftType == Type.REAL && rightType == Type.REAL) {
+                    return operator.equals("/") ? Type.REAL : Type.INTEGER;
+                } else if ((leftType == Type.INTEGER && rightType == Type.REAL) ||
+                        (leftType == Type.REAL && rightType == Type.INTEGER) ||
+                        (leftType == Type.REAL && rightType == Type.REAL)) {
                     return Type.REAL;
                 }
                 throw new SemanticException("Operator '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
@@ -618,7 +620,9 @@ public class TypeCheckingVisitor implements Visitor {
             case "==":
             case "!=":
                 if ((leftType == Type.INTEGER && rightType == Type.INTEGER) ||
-                        (leftType == Type.REAL && rightType == Type.REAL)) {
+                        (leftType == Type.REAL && rightType == Type.REAL) ||
+                        (leftType == Type.INTEGER && rightType == Type.REAL) ||
+                        (leftType == Type.REAL && rightType == Type.INTEGER)) {
                     return Type.BOOLEAN;
                 }
                 throw new SemanticException("Operator '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);

@@ -1,4 +1,5 @@
 proc main(out a: integer, b: integer):
+ var s ^= "Pippo";\
  c ^= somma(a, b);
  var c : integer;\
  if(true) then
