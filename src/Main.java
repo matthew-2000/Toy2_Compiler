@@ -1,21 +1,23 @@
 import java.io.FileReader;
 import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
 import java_cup.runtime.Symbol;
 import nodes.ProgramNode;
 import unisa.compilatori.parser;
 import unisa.compilatori.sym;
+import visitor.CodeGeneratorVisitor;
 import visitor.ScopeCheckingVisitor;
 import visitor.TypeCheckingVisitor;
 import visitor.exception.SemanticException;
 import visitor.symbolTable.SymbolTableManager;
 
 public class Main {
+
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test4.txt";
+        String filePath = "test/test5.txt";
 
-        // Tentiamo di aprire il file di input
         try {
             // Creazione del lexer
             FileReader fileReader = new FileReader(filePath);
@@ -41,20 +43,31 @@ public class Main {
             ProgramNode programNode = (ProgramNode) parser.parse().value;
             System.out.println("=== Parsing completato con successo! ===");
 
-            // Creazione dei visitor
+            // Creazione del SymbolTableManager condiviso
             SymbolTableManager symbolTableManager = new SymbolTableManager();
-            ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor(symbolTableManager);
-            TypeCheckingVisitor typeCheckingVisitor = new TypeCheckingVisitor(symbolTableManager);
 
-            // Esecuzione del visitor sul nodo del programma
+            // Scope Checking
             System.out.println("\n=== Avvio dello scope checking ===");
+            ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor(symbolTableManager);
             programNode.accept(scopeCheckingVisitor);
             System.out.println("=== Scope checking completato con successo! ===");
 
-            // Esecuzione del visitor sul nodo del programma
+            // Type Checking
             System.out.println("\n=== Avvio del type checking ===");
+            TypeCheckingVisitor typeCheckingVisitor = new TypeCheckingVisitor(symbolTableManager);
             programNode.accept(typeCheckingVisitor);
             System.out.println("=== Type checking completato con successo! ===");
+
+            // Code Generation
+            System.out.println("\n=== Avvio della generazione del codice ===");
+            CodeGeneratorVisitor codeGeneratorVisitor = new CodeGeneratorVisitor();
+            String generatedCode = programNode.accept(codeGeneratorVisitor);
+            System.out.println("=== Codice generato ===");
+            System.out.println(generatedCode);
+
+            // Salva il codice generato su un file
+            saveGeneratedCodeToFile("output.c", generatedCode);
+            System.out.println("\nIl codice generato è stato salvato in 'output.c'");
 
         } catch (FileNotFoundException e) {
             System.err.println("Errore: il file " + filePath + " non è stato trovato.");
@@ -66,6 +79,14 @@ public class Main {
         } catch (Exception e) {
             System.err.println("Errore durante l'analisi del file: " + e.getMessage());
             e.printStackTrace();
+        }
+    }
+
+    private static void saveGeneratedCodeToFile(String filePath, String code) {
+        try (FileWriter writer = new FileWriter(filePath)) {
+            writer.write(code);
+        } catch (IOException e) {
+            System.err.println("Errore durante il salvataggio del codice generato: " + e.getMessage());
         }
     }
 

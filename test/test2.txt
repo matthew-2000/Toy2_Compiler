@@ -1,16 +1,10 @@
 proc main(out a: integer, b: integer):
- var s ^= "Pippo";\
- c ^= somma(a, b);
  var c : integer;\
- if(true) then
-    d ^= 3;
- endif;
+ c ^= somma(a, b);
+ -->! "La somma è: " $(c);
 endproc
 
 func somma(a:integer, b:integer)-> integer:
-    d, y ^= 9,6;
-    var y : integer;\
     return a + b;
 endfunc
 
-var d : integer;\
