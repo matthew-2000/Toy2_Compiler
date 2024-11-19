@@ -12,6 +12,7 @@ public class FunCallNode implements ExprNode {
     private String functionName;
     private List<ExprNode> arguments;
     private Type type;
+    private List<Type> returnTypes;
 
     public FunCallNode(String functionName, List<ExprNode> arguments) {
         this.functionName = functionName;
@@ -34,6 +35,14 @@ public class FunCallNode implements ExprNode {
     @Override
     public void setType(Type type) {
         this.type = type;
+    }
+
+    public List<Type> getReturnTypes() {
+        return returnTypes;
+    }
+
+    public void setReturnTypes(List<Type> returnTypes) {
+        this.returnTypes = returnTypes;
     }
 
     @Override

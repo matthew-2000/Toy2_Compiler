@@ -482,7 +482,21 @@ public class TypeCheckingVisitor implements Visitor {
     @Override
     public Type visit(DollarExprNode node) throws SemanticException {
         // Visita l'espressione contenuta e ritorna il tipo
-        return (Type) node.getExpr().accept(this);
+
+        ExprNode exprNode = node.getExpr();
+        if (exprNode instanceof FunCallNode) {
+            FunCallNode funCallNode = (FunCallNode) exprNode;
+            List<Type> returnTypes = funCallNode.getReturnTypes();
+            if (returnTypes.isEmpty() ) {
+                throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " non ha tipi di ritorno. ");
+            }
+            if (returnTypes.size() != 1) {
+                throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " ha più tipi di ritorno.");
+            }
+            return returnTypes.get(0);
+        } else {
+            return (Type) node.getExpr().accept(this);
+        }
     }
 
     @Override

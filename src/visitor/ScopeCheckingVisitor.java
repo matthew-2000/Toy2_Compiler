@@ -448,6 +448,7 @@ public class ScopeCheckingVisitor implements Visitor {
         } else if (symbol.getKind() != SymbolKind.FUNCTION) {
             throw new SemanticException("Identificatore '" + funcName + "' non è una funzione.");
         }
+        node.setReturnTypes(symbol.getReturnTypes());
 
         List<ExprNode> args = node.getArguments();
 
