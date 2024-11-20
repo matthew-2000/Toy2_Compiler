@@ -542,6 +542,7 @@ public class TypeCheckingVisitor implements Visitor {
         if (symbol == null) {
             throw new SemanticException("Identificatore '" + node.getName() + "' non dichiarato.");
         }
+        node.setIsOutInProcedure(symbol.isOut());
         return symbol.getType(); // Ritorna il tipo dell'identificatore
     }
 
@@ -563,28 +564,22 @@ public class TypeCheckingVisitor implements Visitor {
         // Controlla se il risultato del nodo sinistro è una lista di tipi
         if (leftResult instanceof List<?>) {
             List<?> leftTypeList = (List<?>) leftResult;
-            // Assicurati che ci sia solo un tipo nella lista
             if (leftTypeList.size() != 1) {
                 throw new SemanticException("Espressione sinistra restituisce più di un tipo.");
             }
-            // Estrai il tipo
             leftType = (Type) leftTypeList.get(0);
         } else {
-            // È un singolo tipo
             leftType = (Type) leftResult;
         }
 
         // Controlla se il risultato del nodo destro è una lista di tipi
         if (rightResult instanceof List<?>) {
             List<?> rightTypeList = (List<?>) rightResult;
-            // Assicurati che ci sia solo un tipo nella lista
             if (rightTypeList.size() != 1) {
                 throw new SemanticException("Espressione destra restituisce più di un tipo.");
             }
-            // Estrai il tipo
             rightType = (Type) rightTypeList.get(0);
         } else {
-            // È un singolo tipo
             rightType = (Type) rightResult;
         }
 
@@ -594,6 +589,18 @@ public class TypeCheckingVisitor implements Visitor {
         // Regole di type-checking basate sull'operatore
         switch (operator) {
             case "+":
+                if ((leftType == Type.STRING && (rightType == Type.STRING || rightType == Type.INTEGER || rightType == Type.REAL)) ||
+                        ((leftType == Type.INTEGER || leftType == Type.REAL) && rightType == Type.STRING)) {
+                    return Type.STRING; // Concatenazione tra stringhe e numeri è valida
+                } else if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
+                    return Type.INTEGER;
+                } else if ((leftType == Type.INTEGER && rightType == Type.REAL) ||
+                        (leftType == Type.REAL && rightType == Type.INTEGER) ||
+                        (leftType == Type.REAL && rightType == Type.REAL)) {
+                    return Type.REAL;
+                }
+                throw new SemanticException("Operator '+' non applicabile ai tipi " + leftType + " e " + rightType);
+
             case "-":
             case "*":
             case "/":
@@ -624,6 +631,8 @@ public class TypeCheckingVisitor implements Visitor {
                         (leftType == Type.INTEGER && rightType == Type.REAL) ||
                         (leftType == Type.REAL && rightType == Type.INTEGER)) {
                     return Type.BOOLEAN;
+                } else if (leftType == Type.STRING && rightType == Type.STRING && operator.equals("==")) {
+                    return Type.BOOLEAN; // Comparazione tra stringhe valida solo con "=="
                 }
                 throw new SemanticException("Operator '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
 

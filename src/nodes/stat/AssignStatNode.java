@@ -4,15 +4,19 @@ import nodes.expr.ExprNode;
 import nodes.StatNode;
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class AssignStatNode extends StatNode {
     private List<String> ids;
+    private List<Boolean> isOutIds;
     private List<ExprNode> exprs;
 
     public AssignStatNode(List<String> ids, List<ExprNode> exprs) {
         this.ids = ids;
         this.exprs = exprs;
+        this.isOutIds = new ArrayList<>();
     }
 
     public List<String> getIds() {
@@ -21,6 +25,12 @@ public class AssignStatNode extends StatNode {
 
     public List<ExprNode> getExprs() {
         return exprs;
+    }
+
+    public List<Boolean> getIsOutIds() {return isOutIds;}
+
+    public void setIsOutId(boolean isOutId) {
+        isOutIds.add(isOutId);
     }
 
     @Override

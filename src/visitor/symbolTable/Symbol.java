@@ -9,6 +9,7 @@ public class Symbol {
     private Type type;  // Tipo del simbolo (es. integer, real, function, ecc.)
     private SymbolKind kind;  // Variabile, Funzione o Procedura
     private boolean isParameter = false;
+    private boolean isOut = false;
     private List<Type> paramTypes;  // Tipi dei parametri (per funzioni e procedure)
     private List<Boolean> isOutParams;  // Flag per i parametri OUT (per procedure)
     private List<Type> returnTypes;   // Tipi di ritorno (per funzioni)
@@ -26,6 +27,14 @@ public class Symbol {
         this.type = type;
         this.kind = kind;
         this.isParameter = isParameter;
+    }
+
+    // Costruttore per variabili parametri di procedura
+    public Symbol(String name, Type type, boolean isOut, SymbolKind kind) {
+        this.name = name;
+        this.type = type;
+        this.kind = kind;
+        this.isOut = isOut;
     }
 
     // Costruttore per funzioni
@@ -60,6 +69,13 @@ public class Symbol {
     }
     public void setIsParameter(boolean parameter) {isParameter = parameter; }
 
+    public boolean isOut() {
+        return isOut;
+    }
+
+    public void setIsOut(boolean out) {
+        isOut = out;
+    }
     @Override
     public String toString() {
         return "Symbol{" +
@@ -67,6 +83,7 @@ public class Symbol {
                 ", type='" + type + '\'' +
                 ", kind=" + kind +
                 ", isParameter=" + isParameter +
+                ", isOut=" + isOut +
                 ", paramTypes=" + paramTypes +
                 ", isOutParams=" + isOutParams +
                 ", returnTypes=" + returnTypes +

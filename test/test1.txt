@@ -36,7 +36,7 @@ proc main():
 	a, b ^= 1, 2.2; x ^= 3;
 	taglia, ans1 : string;
 	ans ^= "no";
-	risultato ^= 0;\
+	risultato ^= 0.0;\
 
 	sommac(a, x, b, @taglia, @risultato);
 
@@ -49,7 +49,7 @@ proc main():
 	while ans = "si" do
 	    <-- "inserisci un intero:" $(a);
 	    <-- "inserisci un reale:" $(b);
-	    sommac(a, b, @taglia, @risultato);
+	    sommac(a, 0, b, @taglia, @risultato);
 	    valore ^= stampa("la somma di " + a + " e " + b +  " incrementata di " + c + " è " + taglia);
 	    valore ^= stampa(" ed è pari a " + risultato);
 	    <-- "vuoi continuare? (si/no):\t" $(ans);

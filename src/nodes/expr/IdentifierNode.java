@@ -8,6 +8,7 @@ import visitor.utils.Type;
 public class IdentifierNode implements ExprNode {
     private String name;
     private Type type;
+    private boolean isOutInProcedure = false;
 
     public IdentifierNode(String name) {
         this.name = name;
@@ -25,6 +26,14 @@ public class IdentifierNode implements ExprNode {
     @Override
     public void setType(Type type) {
         this.type = type;
+    }
+
+    public void setIsOutInProcedure(boolean isOutInProcedure) {
+        this.isOutInProcedure = isOutInProcedure;
+    }
+
+    public boolean getIsOutInProcedure() {
+        return isOutInProcedure;
     }
 
     @Override

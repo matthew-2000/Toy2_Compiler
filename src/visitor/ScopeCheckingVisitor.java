@@ -249,6 +249,7 @@ public class ScopeCheckingVisitor implements Visitor {
         if (!success) {
             throw new SemanticException("Parametro '" + node.getName() + "' già dichiarato nello scope corrente.");
         }
+        symbolTableManager.lookup(node.getName()).setIsOut(node.isOut());
         return null;
     }
 
@@ -271,6 +272,8 @@ public class ScopeCheckingVisitor implements Visitor {
             if (symbol == null) {
 //                throw new SemanticException("Variabile '" + id + "' non dichiarata.");
                 symbolTableManager.addUnresolvedReference(id);
+            } else {
+                node.setIsOutId(symbol.isOut());
             }
         }
 
@@ -563,7 +566,6 @@ public class ScopeCheckingVisitor implements Visitor {
             // throw new SemanticException("Variabile '" + id + "' non dichiarata.");
             symbolTableManager.addUnresolvedReference(id);
         }
-        // Ulteriori controlli sul tipo possono essere aggiunti qui
         return null;
     }
 

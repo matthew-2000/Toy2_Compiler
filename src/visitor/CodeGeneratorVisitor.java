@@ -45,6 +45,7 @@ public class CodeGeneratorVisitor implements Visitor<String> {
         // Inizia includendo le librerie standard necessarie
         code.append("#include <stdio.h>\n");
         code.append("#include <stdlib.h>\n");
+        code.append("#include <stdbool.h>\n");
         code.append("\n");
 
         // Visita le dichiarazioni globali e le funzioni/procedure
@@ -231,7 +232,7 @@ public class CodeGeneratorVisitor implements Visitor<String> {
     public String visit(ProcParamNode node) throws SemanticException {
         String paramType = mapType(node.getType());
         if (node.isOut()) {
-            paramType = "int*"; // Assuming 'out' parameters are integers for simplicity
+            paramType = paramType + "*"; // Assuming 'out' parameters are integers for simplicity
         }
         return paramType + " " + node.getName();
     }
@@ -252,16 +253,13 @@ public class CodeGeneratorVisitor implements Visitor<String> {
     public String visit(AssignStatNode node) throws SemanticException {
         List<String> ids = node.getIds();
         List<ExprNode> exprs = node.getExprs();
-
-        if (ids.size() != exprs.size()) {
-            throw new SemanticException("Number of identifiers and expressions do not match.");
-        }
+        List<Boolean> isOutIds = node.getIsOutIds();
 
         for (int i = 0; i < ids.size(); i++) {
             String id = ids.get(i);
             String exprCode = exprs.get(i).accept(this);
             indent();
-            code.append(id).append(" = ").append(exprCode).append(";\n");
+            code.append(isOutIds.get(i) ? "*"+id : id).append(" = ").append(exprCode).append(";\n");
         }
         return ""; // AssignStatNode does not return a string directly
     }
@@ -521,7 +519,7 @@ public class CodeGeneratorVisitor implements Visitor<String> {
 
     @Override
     public String visit(IdentifierNode node) throws SemanticException {
-        return node.getName();
+        return node.getIsOutInProcedure() ? "*"+node.getName() : node.getName();
     }
 
     @Override
