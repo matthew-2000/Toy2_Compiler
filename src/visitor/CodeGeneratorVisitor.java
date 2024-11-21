@@ -562,8 +562,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             // Supponendo che IOArgBinaryNode abbia un metodo getType()
             return ((IOArgBinaryNode) arg).getType();
         } else if (arg instanceof DollarExprNode) {
-            ExprNode expr = ((DollarExprNode) arg).getExpr();
-            return expr.getType();
+            return ((DollarExprNode) arg).getType();
         } else if (arg instanceof IOArgStringLiteralNode) {
             return Type.STRING;
         } else {

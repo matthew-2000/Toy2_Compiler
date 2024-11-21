@@ -46,7 +46,7 @@ proc main():
 	valore ^= stampa("ed è pari a " + risultato);
 
 	<-- "vuoi continuare? (si/no) - inserisci due volte la risposta" $(ans) $(ans1) ;
-	while ans = "si" do
+	while ans = "si" && ans1 = "si" do
 	    <-- "inserisci un intero:" $(a);
 	    <-- "inserisci un reale:" $(b);
 	    sommac(a, 0, b, @taglia, @risultato);

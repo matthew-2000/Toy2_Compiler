@@ -501,15 +501,18 @@ public class TypeCheckingVisitor implements Visitor {
                 if (symbol.getReturnTypes() == null || symbol.getReturnTypes().isEmpty()) {
                     throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " non ha tipi di ritorno. ");
                 } else {
+                    node.setType(symbol.getReturnTypes().get(0));
                     return symbol.getReturnTypes().get(0);
                 }
             }
             if (returnTypes.size() != 1) {
                 throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " ha più tipi di ritorno.");
             }
+            node.setType(returnTypes.get(0));
             return returnTypes.get(0);
         } else {
-            return (Type) node.getExpr().accept(this);
+            node.setType((Type) node.getExpr().accept(this));
+            return node.getType();
         }
     }
 
