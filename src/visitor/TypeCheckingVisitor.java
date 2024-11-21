@@ -456,6 +456,7 @@ public class TypeCheckingVisitor implements Visitor {
     public Type visit(IOArgIdentifierNode node) throws SemanticException {
         // Verifica che l'identificatore esista nella SymbolTable e ottieni il suo tipo
         Symbol symbol = currentScope.lookup(node.getIdentifier());
+        node.setType(symbol.getType());
         return symbol.getType(); // Ritorna il tipo dell'identificatore
     }
 
@@ -473,6 +474,7 @@ public class TypeCheckingVisitor implements Visitor {
 
         // L'operatore "+" è valido solo se entrambi gli argomenti sono STRING o entrambi INTEGER
         if ((leftType == Type.STRING && rightType == Type.STRING) || (leftType == Type.INTEGER && rightType == Type.INTEGER)) {
+            node.setType(leftType);
             return leftType; // Il tipo di ritorno è coerente con il tipo degli argomenti
         } else {
             throw new SemanticException("Operatore '+' non applicabile ai tipi " + leftType + " e " + rightType);

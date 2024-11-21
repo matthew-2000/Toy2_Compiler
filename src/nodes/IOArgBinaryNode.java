@@ -2,11 +2,13 @@ package nodes;
 
 import visitor.Visitor;
 import visitor.exception.SemanticException;
+import visitor.utils.Type;
 
 public class IOArgBinaryNode implements IOArgNode {
     private IOArgNode left;
     private IOArgNode right;
     private String operator;  // In questo caso, sarà sempre "+"
+    private Type type;
 
     public IOArgBinaryNode(IOArgNode left, IOArgNode right, String operator) {
         this.left = left;
@@ -24,6 +26,14 @@ public class IOArgBinaryNode implements IOArgNode {
 
     public String getOperator() {
         return operator;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
+    }
+
+    public Type getType() {
+        return type;
     }
 
     @Override

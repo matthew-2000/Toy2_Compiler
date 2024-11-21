@@ -233,7 +233,6 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     @Override
     public Object visit(DeclNode node) throws SemanticException {
-        StringJoiner declarations = new StringJoiner(", ");
         List<String> ids = node.getIds();
         List<ConstNode> consts = node.getConsts();
 
@@ -241,10 +240,25 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             // Case: declaration with a specified type
             String cType = mapType(node.getType());
             for (String id : ids) {
-                declarations.add(id);
+                if (node.getType() == Type.STRING) {
+                    // For strings, allocate memory dynamically
+                    indent();
+                    code.append("char* ").append(id).append(" = malloc(256 * sizeof(char));\n");
+                    indent();
+                    code.append("if (").append(id).append(" == NULL) {\n");
+                    increaseIndent();
+                    indent();
+                    code.append("fprintf(stderr, \"Memory allocation failed for ").append(id).append("\\n\");\n");
+                    indent();
+                    code.append("exit(1);\n");
+                    decreaseIndent();
+                    indent();
+                    code.append("}\n");
+                } else {
+                    indent();
+                    code.append(cType).append(" ").append(id).append(";\n");
+                }
             }
-            indent();
-            code.append(cType).append(" ").append(declarations.toString()).append(";\n");
         } else if (consts != null) {
             // Case: declaration with constant assignments
             if (ids.size() != consts.size()) {
@@ -256,8 +270,26 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 String constantValue = (String) constant.accept(this); // Generate the constant code
                 String cType = mapType(constant.getType()); // Get the constant's type
 
-                indent();
-                code.append(cType).append(" ").append(id).append(" = ").append(constantValue).append(";\n");
+                if (constant.getType() == Type.STRING) {
+                    // For string constants, allocate and initialize dynamically
+                    indent();
+                    code.append("char* ").append(id).append(" = malloc(strlen(").append(constantValue).append(") + 1);\n");
+                    indent();
+                    code.append("if (").append(id).append(" == NULL) {\n");
+                    increaseIndent();
+                    indent();
+                    code.append("fprintf(stderr, \"Memory allocation failed for ").append(id).append("\\n\");\n");
+                    indent();
+                    code.append("exit(1);\n");
+                    decreaseIndent();
+                    indent();
+                    code.append("}\n");
+                    indent();
+                    code.append("strcpy(").append(id).append(", ").append(constantValue).append(");\n");
+                } else {
+                    indent();
+                    code.append(cType).append(" ").append(id).append(" = ").append(constantValue).append(";\n");
+                }
             }
         } else {
             throw new SemanticException("Invalid declaration: missing type or assignment.");
@@ -447,43 +479,42 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     @Override
     public Object visit(WriteStatNode node) throws SemanticException {
-        generateWriteStat(node.getArgs());
+        generateWriteStat(node.getArgs(), false); // Passiamo 'false' per NON aggiungere una nuova linea
         return null;
     }
 
     @Override
     public Object visit(WriteReturnStatNode node) throws SemanticException {
-        generateWriteStat(node.getArgs());
+        generateWriteStat(node.getArgs(), true); // Passiamo 'true' per aggiungere una nuova linea
         return null;
     }
 
-    private void generateWriteStat(List<IOArgNode> args) throws SemanticException {
+    private void generateWriteStat(List<IOArgNode> args, boolean appendNewline) throws SemanticException {
         StringBuilder argsBuilder = new StringBuilder();
         indent();
         code.append("printf(").append("\"");
+        List<String> argCodes = new ArrayList<>();
         for (IOArgNode arg : args) {
             if (arg instanceof IOArgStringLiteralNode) {
                 String str = ((IOArgStringLiteralNode) arg).getValue();
                 code.append(str.replace("\"", "\\\""));
             } else {
-                // Use %d regardless of the variable type
-                code.append("%d");
+                // Determina lo specificatore di formato in base al tipo
+                Type argType = getTypeOfIOArgNode(arg);
+                String formatSpecifier = getFormatSpecifier(argType);
+                code.append(formatSpecifier);
+                // Genera il codice per l'argomento
+                String argCode = (String) arg.accept(this);
+                argCodes.add(argCode);
             }
         }
+        if (appendNewline) {
+            code.append("\\n"); // Aggiunge il carattere di nuova linea
+        }
         code.append("\"");
-        if (args.size() > 1) {
+        if (!argCodes.isEmpty()) {
             code.append(", ");
-            for (int i = 0; i < args.size(); i++) {
-                IOArgNode arg = args.get(i);
-                if (!(arg instanceof IOArgStringLiteralNode)) {
-                    String argCode = (String) arg.accept(this);
-                    argsBuilder.append(argCode);
-                    if (i < args.size() - 1) {
-                        argsBuilder.append(", ");
-                    }
-                }
-            }
-            code.append(argsBuilder.toString());
+            code.append(String.join(", ", argCodes));
         }
         code.append(");\n");
     }
@@ -491,11 +522,77 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     @Override
     public Object visit(ReadStatNode node) throws SemanticException {
         for (IOArgNode arg : node.getArgs()) {
-            indent();
-            code.append("scanf(\"%d\", &").append(arg.accept(this)).append(");\n"); // Use %d regardless of type
+            if (arg instanceof IOArgStringLiteralNode) {
+                // Se è una stringa letterale, stampala come prompt
+                indent();
+                String prompt = ((IOArgStringLiteralNode) arg).getValue().replace("\"", "\\\"");
+                code.append("printf(\"").append(prompt).append("\");\n");
+            } else {
+                // Altrimenti, leggi l'input nella variabile
+                indent();
+                String argName = (String) arg.accept(this);
+                Type argType = getTypeOfIOArgNode(arg);
+                String formatSpecifier = getInputFormatSpecifier(argType);
+
+                if (argType == Type.STRING) {
+                    // Per le stringhe, non serve &
+                    code.append("scanf(\"").append(formatSpecifier).append("\", ").append(argName).append(");\n");
+                } else {
+                    // Per altri tipi, usa &
+                    code.append("scanf(\"").append(formatSpecifier).append("\", &").append(argName).append(");\n");
+                }
+            }
         }
         return null;
     }
+
+    private Type getTypeOfIOArgNode(IOArgNode arg) throws SemanticException {
+        if (arg instanceof IOArgIdentifierNode) {
+            // Recupera il tipo dall'identifier
+            return ((IOArgIdentifierNode) arg).getType();
+        } else if (arg instanceof IOArgBinaryNode) {
+            // Supponendo che IOArgBinaryNode abbia un metodo getType()
+            return ((IOArgBinaryNode) arg).getType();
+        } else if (arg instanceof DollarExprNode) {
+            ExprNode expr = ((DollarExprNode) arg).getExpr();
+            return expr.getType();
+        } else if (arg instanceof IOArgStringLiteralNode) {
+            return Type.STRING;
+        } else {
+            throw new SemanticException("Tipo di IOArgNode sconosciuto: " + arg.getClass().getSimpleName());
+        }
+    }
+
+    private String getFormatSpecifier(Type type) {
+        switch (type) {
+            case INTEGER:
+                return "%d";
+            case REAL:
+                return "%f";
+            case STRING:
+                return "%s";
+            case BOOLEAN:
+                return "%d"; // I booleani in C sono stampati come interi
+            default:
+                return "%d"; // Predefinito a %d
+        }
+    }
+
+    private String getInputFormatSpecifier(Type type) {
+        switch (type) {
+            case INTEGER:
+                return "%d";
+            case REAL:
+                return "%lf"; // Per leggere valori double in scanf
+            case STRING:
+                return "%s";
+            case BOOLEAN:
+                return "%d"; // Legge come intero
+            default:
+                return "%d"; // Predefinito a %d
+        }
+    }
+
 
     @Override
     public Object visit(IfStatNode node) throws SemanticException {
@@ -526,7 +623,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             indent();
             code.append("else {\n");
             increaseIndent();
-            node.getElseBlock().accept(this);
+            node.getElseBlock().getBody().accept(this);
             decreaseIndent();
             indent();
             code.append("}\n");
@@ -655,24 +752,71 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         String operator = node.getOperator();
         String leftCode = (String) node.getLeft().accept(this);
         String rightCode = (String) node.getRight().accept(this);
+        Type leftType = node.getLeft().getType();
+        Type rightType = node.getRight().getType();
 
         if (operator.equals("+")) {
-            Type leftType = node.getLeft().getType();
-            Type rightType = node.getRight().getType();
-
             if (leftType == Type.STRING || rightType == Type.STRING) {
-                // At least one operand is a string, perform concatenation
+                // Concatenazione di stringhe
                 String resultVar = generateConcatenationCode(leftCode, leftType, rightCode, rightType);
                 return resultVar;
             } else {
-                // Both operands are numbers, perform normal addition
+                // Somma normale
                 return "(" + leftCode + " + " + rightCode + ")";
             }
+        } else if (isComparisonOperator(operator)) {
+            if (leftType == Type.STRING && rightType == Type.STRING) {
+                // Confronto tra stringhe
+                String comparisonCode = generateStringComparisonCode(leftCode, rightCode, operator);
+                return comparisonCode;
+            } else {
+                // Confronto tra altri tipi
+                String cOperator = mapOperatorToC(operator);
+                return "(" + leftCode + " " + cOperator + " " + rightCode + ")";
+            }
         } else {
-            // For other operators, generate normal code
+            // Altri operatori
             String cOperator = mapOperatorToC(operator);
             return "(" + leftCode + " " + cOperator + " " + rightCode + ")";
         }
+    }
+
+    private boolean isComparisonOperator(String operator) {
+        return operator.equals("==") || operator.equals("!=")
+                || operator.equals("<") || operator.equals(">")
+                || operator.equals("<=") || operator.equals(">=");
+    }
+
+    private String generateStringComparisonCode(String leftCode, String rightCode, String operator) throws SemanticException {
+        String comparisonResult = getNextTempVar();
+        indent();
+        code.append("int ").append(comparisonResult).append(" = strcmp(").append(leftCode).append(", ").append(rightCode).append(");\n");
+
+        String condition;
+        switch (operator) {
+            case "==":
+                condition = "(" + comparisonResult + " == 0)";
+                break;
+            case "!=":
+                condition = "(" + comparisonResult + " != 0)";
+                break;
+            case "<":
+                condition = "(" + comparisonResult + " < 0)";
+                break;
+            case ">":
+                condition = "(" + comparisonResult + " > 0)";
+                break;
+            case "<=":
+                condition = "(" + comparisonResult + " <= 0)";
+                break;
+            case ">=":
+                condition = "(" + comparisonResult + " >= 0)";
+                break;
+            default:
+                throw new SemanticException("Operatore di confronto non supportato per le stringhe: " + operator);
+        }
+
+        return condition;
     }
 
     private String generateConcatenationCode(String leftCode, Type leftType, String rightCode, Type rightType) throws SemanticException {
