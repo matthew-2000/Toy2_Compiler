@@ -14,6 +14,11 @@ public class IdentifierNode implements ExprNode {
         this.name = name;
     }
 
+    public IdentifierNode(String name, Type type) {
+        this.name = name;
+        this.type = type;
+    }
+
     public String getName() {
         return name;
     }

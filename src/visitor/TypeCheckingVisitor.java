@@ -543,12 +543,14 @@ public class TypeCheckingVisitor implements Visitor {
             throw new SemanticException("Identificatore '" + node.getName() + "' non dichiarato.");
         }
         node.setIsOutInProcedure(symbol.isOut());
+        node.setType(symbol.getType());
         return symbol.getType(); // Ritorna il tipo dell'identificatore
     }
 
     @Override
     public Type visit(BooleanConstNode node) throws SemanticException {
         // Una costante booleana ha sempre tipo BOOLEAN
+        node.setType(Type.BOOLEAN);
         return Type.BOOLEAN;
     }
 
@@ -591,12 +593,15 @@ public class TypeCheckingVisitor implements Visitor {
             case "+":
                 if ((leftType == Type.STRING && (rightType == Type.STRING || rightType == Type.INTEGER || rightType == Type.REAL)) ||
                         ((leftType == Type.INTEGER || leftType == Type.REAL) && rightType == Type.STRING)) {
+                    node.setType(Type.STRING);
                     return Type.STRING; // Concatenazione tra stringhe e numeri è valida
                 } else if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
+                    node.setType(Type.INTEGER);
                     return Type.INTEGER;
                 } else if ((leftType == Type.INTEGER && rightType == Type.REAL) ||
                         (leftType == Type.REAL && rightType == Type.INTEGER) ||
                         (leftType == Type.REAL && rightType == Type.REAL)) {
+                    node.setType(Type.REAL);
                     return Type.REAL;
                 }
                 throw new SemanticException("Operator '+' non applicabile ai tipi " + leftType + " e " + rightType);
@@ -605,10 +610,17 @@ public class TypeCheckingVisitor implements Visitor {
             case "*":
             case "/":
                 if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
-                    return operator.equals("/") ? Type.REAL : Type.INTEGER;
+                    if (operator.equals("/")){
+                        node.setType(Type.REAL);
+                        return Type.REAL;
+                    } else {
+                        node.setType(Type.INTEGER);
+                        return Type.INTEGER;
+                    }
                 } else if ((leftType == Type.INTEGER && rightType == Type.REAL) ||
                         (leftType == Type.REAL && rightType == Type.INTEGER) ||
                         (leftType == Type.REAL && rightType == Type.REAL)) {
+                    node.setType(Type.REAL);
                     return Type.REAL;
                 }
                 throw new SemanticException("Operator '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
@@ -616,6 +628,7 @@ public class TypeCheckingVisitor implements Visitor {
             case "and":
             case "or":
                 if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN) {
+                    node.setType(Type.BOOLEAN);
                     return Type.BOOLEAN;
                 }
                 throw new SemanticException("Operator '" + operator + "' richiede tipi BOOLEAN.");
@@ -630,8 +643,10 @@ public class TypeCheckingVisitor implements Visitor {
                         (leftType == Type.REAL && rightType == Type.REAL) ||
                         (leftType == Type.INTEGER && rightType == Type.REAL) ||
                         (leftType == Type.REAL && rightType == Type.INTEGER)) {
+                    node.setType(Type.BOOLEAN);
                     return Type.BOOLEAN;
                 } else if (leftType == Type.STRING && rightType == Type.STRING && operator.equals("==")) {
+                    node.setType(Type.BOOLEAN);
                     return Type.BOOLEAN; // Comparazione tra stringhe valida solo con "=="
                 }
                 throw new SemanticException("Operator '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
@@ -651,12 +666,14 @@ public class TypeCheckingVisitor implements Visitor {
         switch (operator) {
             case "uminus":
                 if (exprType == Type.INTEGER || exprType == Type.REAL) {
+                    node.setType(exprType);
                     return exprType; // Ritorna lo stesso tipo (INTEGER o REAL)
                 }
                 throw new SemanticException("Operator 'uminus' applicabile solo a INTEGER o REAL.");
 
             case "not":
                 if (exprType == Type.BOOLEAN) {
+                    node.setType(exprType);
                     return Type.BOOLEAN;
                 }
                 throw new SemanticException("Operator 'not' applicabile solo a BOOLEAN.");

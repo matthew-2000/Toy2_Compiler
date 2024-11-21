@@ -12,6 +12,11 @@ public class IntConstNode implements ExprNode {
         this.value = value;
     }
 
+    public IntConstNode(int value, Type type) {
+        this.value = value;
+        this.type = type;
+    }
+
     public int getValue() {
         return value;
     }

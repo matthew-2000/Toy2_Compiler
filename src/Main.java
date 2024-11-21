@@ -61,7 +61,7 @@ public class Main {
             // Code Generation
             System.out.println("\n=== Avvio della generazione del codice ===");
             CodeGeneratorVisitor codeGeneratorVisitor = new CodeGeneratorVisitor();
-            String generatedCode = programNode.accept(codeGeneratorVisitor);
+            String generatedCode = (String) programNode.accept(codeGeneratorVisitor);
             System.out.println("=== Codice generato ===");
             System.out.println(generatedCode);
 

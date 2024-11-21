@@ -12,6 +12,11 @@ public class BooleanConstNode implements ExprNode {
         this.value = value;
     }
 
+    public BooleanConstNode(boolean value, Type type) {
+        this.value = value;
+        this.type = type;
+    }
+
     public boolean getValue() {
         return value;
     }

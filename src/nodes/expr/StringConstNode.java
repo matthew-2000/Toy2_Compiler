@@ -12,6 +12,11 @@ public class StringConstNode implements ExprNode {
         this.value = value;
     }
 
+    public StringConstNode(String value, Type type) {
+        this.value = value;
+        this.type = type;
+    }
+
     public String getValue() {
         return value;
     }

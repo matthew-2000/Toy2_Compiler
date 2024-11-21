@@ -13,6 +13,11 @@ public class RealConstNode implements ExprNode {
         this.value = value;
     }
 
+    public RealConstNode(double value, Type type) {
+        this.value = value;
+        this.type = type;
+    }
+
     public double getValue() {
         return value;
     }

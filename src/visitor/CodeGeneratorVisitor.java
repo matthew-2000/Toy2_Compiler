@@ -6,12 +6,14 @@ import nodes.expr.*;
 import visitor.exception.SemanticException;
 import visitor.utils.Type;
 
-import java.util.List;
-import java.util.StringJoiner;
+import java.util.*;
 
-public class CodeGeneratorVisitor implements Visitor<String> {
+public class CodeGeneratorVisitor implements Visitor<Object> {
     private StringBuilder code;
     private int indentLevel;
+    private int tempVarCounter = 0;
+    private List<String> functionPrototypes = new ArrayList<>();
+    private List<DeclNode> globalDeclarations = new ArrayList<>();
 
     public CodeGeneratorVisitor() {
         this.code = new StringBuilder();
@@ -40,25 +42,56 @@ public class CodeGeneratorVisitor implements Visitor<String> {
         return code.toString();
     }
 
+    private String getNextTempVar() {
+        return "tmp_" + (tempVarCounter++);
+    }
+
     @Override
-    public String visit(ProgramNode node) throws SemanticException {
-        // Inizia includendo le librerie standard necessarie
+    public Object visit(ProgramNode node) throws SemanticException {
+        // Include necessary standard libraries
         code.append("#include <stdio.h>\n");
         code.append("#include <stdlib.h>\n");
         code.append("#include <stdbool.h>\n");
+        code.append("#include <string.h>\n");
         code.append("\n");
 
-        // Visita le dichiarazioni globali e le funzioni/procedure
+        // Rileva e raccogli tutte le dichiarazioni globali
+        if (node.getItersWithoutProcedure() != null) {
+            collectGlobalDeclarations(node.getItersWithoutProcedure());
+        }
+
+        if (node.getIters() != null) {
+            collectGlobalDeclarations(node.getIters());
+        }
+
+        // Genera il codice per le dichiarazioni globali
+        for (DeclNode globalDecl : globalDeclarations) {
+            globalDecl.accept(this); // Genera il codice per ogni dichiarazione globale
+        }
+
+        code.append("\n");
+
+        // Rileva e genera le dichiarazioni per le funzioni/procedure
+        if (node.getItersWithoutProcedure() != null) {
+            collectFunctionPrototypes(node.getItersWithoutProcedure());
+        }
+        if (node.getIters() != null) {
+            collectFunctionPrototypes(node.getIters());
+        }
+
+        // Output function prototypes
+        for (String prototype : functionPrototypes) {
+            code.append(prototype).append(";\n");
+        }
+        code.append("\n");
+
+        // Genera il codice per il resto del programma
         if (node.getItersWithoutProcedure() != null) {
             node.getItersWithoutProcedure().accept(this);
         }
-
-        // Visita la procedura principale (main)
         if (node.getProcedure() != null) {
             node.getProcedure().accept(this);
         }
-
-        // Visita eventuali altre dichiarazioni o funzioni
         if (node.getIters() != null) {
             node.getIters().accept(this);
         }
@@ -66,48 +99,146 @@ public class CodeGeneratorVisitor implements Visitor<String> {
         return code.toString();
     }
 
-    @Override
-    public String visit(ItersWithoutProcedureNode node) throws SemanticException {
+    private void collectGlobalDeclarations(ItersWithoutProcedureNode node) {
         for (IterWithoutProcedureNode iter : node.getIterList()) {
-            code.append(iter.accept(this));
+            if (iter.getDeclaration() instanceof VarDeclNode) {
+                VarDeclNode varDeclNode = (VarDeclNode) iter.getDeclaration();
+                globalDeclarations.addAll(varDeclNode.getDecls());
+            }
         }
-        return ""; // ItersWithoutProcedureNode does not return a string directly
     }
 
-    @Override
-    public String visit(IterWithoutProcedureNode node) throws SemanticException {
-        return node.getDeclaration().accept(this);
-    }
-
-    @Override
-    public String visit(ItersNode node) throws SemanticException {
+    private void collectGlobalDeclarations(ItersNode node) {
         for (IterNode iter : node.getIterList()) {
-            code.append(iter.accept(this));
+            if (iter.getDeclaration() instanceof VarDeclNode) {
+                VarDeclNode varDeclNode = (VarDeclNode) iter.getDeclaration();
+                globalDeclarations.addAll(varDeclNode.getDecls());
+            }
         }
-        return ""; // ItersNode does not return a string directly
+    }
+
+
+    private void collectFunctionPrototypes(ItersWithoutProcedureNode node) throws SemanticException {
+        for (IterWithoutProcedureNode iter : node.getIterList()) {
+            if (iter.getDeclaration() instanceof FunctionNode) {
+                FunctionNode funcNode = (FunctionNode) iter.getDeclaration();
+                String prototype = generateFunctionPrototype(funcNode);
+                functionPrototypes.add(prototype);
+            } else if (iter.getDeclaration() instanceof ProcedureNode) {
+                ProcedureNode procNode = (ProcedureNode) iter.getDeclaration();
+                String prototype = generateProcedurePrototype(procNode);
+                functionPrototypes.add(prototype);
+            }
+        }
+    }
+
+    private void collectFunctionPrototypes(ItersNode node) throws SemanticException {
+        for (IterNode iter : node.getIterList()) {
+            if (iter.getDeclaration() instanceof FunctionNode) {
+                FunctionNode funcNode = (FunctionNode) iter.getDeclaration();
+                String prototype = generateFunctionPrototype(funcNode);
+                functionPrototypes.add(prototype);
+            } else if (iter.getDeclaration() instanceof ProcedureNode) {
+                ProcedureNode procNode = (ProcedureNode) iter.getDeclaration();
+                String prototype = generateProcedurePrototype(procNode);
+                functionPrototypes.add(prototype);
+            }
+        }
+    }
+
+    private String generateFunctionPrototype(FunctionNode node) throws SemanticException {
+        // Function signature
+        String returnType = mapType(node.getReturnTypes().get(0)); // Assuming single return type
+        String paramsCode = "";
+        if (node.getParams() != null) {
+            paramsCode = getParamsCode(node.getParams());
+        }
+        String prototype = returnType + " " + node.getName() + "(" + paramsCode + ")";
+        return prototype;
+    }
+
+    private String generateProcedurePrototype(ProcedureNode node) throws SemanticException {
+        String paramsCode = "";
+        if (node.getParams() != null) {
+            paramsCode = getProcParamsCode(node.getParams());
+        }
+        String prototype = "void " + node.getName() + "(" + paramsCode + ")";
+        return prototype;
+    }
+
+    private String getParamsCode(FuncParamsNode params) throws SemanticException {
+        StringJoiner paramsJoiner = new StringJoiner(", ");
+        for (ParamNode param : params.getParams()) {
+            String paramType = mapType(param.getType());
+            paramsJoiner.add(paramType + " " + param.getName());
+        }
+        return paramsJoiner.toString();
+    }
+
+    private String getProcParamsCode(ProcParamsNode params) throws SemanticException {
+        StringJoiner paramsJoiner = new StringJoiner(", ");
+        for (ProcParamNode param : params.getParams()) {
+            String paramType = mapType(param.getType());
+            if (param.isOut()) {
+                paramType = paramType + "*"; // 'out' parameters are pointers
+            }
+            paramsJoiner.add(paramType + " " + param.getName());
+        }
+        return paramsJoiner.toString();
     }
 
     @Override
-    public String visit(IterNode node) throws SemanticException {
-        return node.getDeclaration().accept(this);
+    public Object visit(ItersWithoutProcedureNode node) throws SemanticException {
+        for (IterWithoutProcedureNode iter : node.getIterList()) {
+            if (iter.getDeclaration() instanceof VarDeclNode) {
+                continue;
+            }
+            iter.accept(this);
+        }
+        return null; // ItersWithoutProcedureNode does not return a value
     }
 
     @Override
-    public String visit(VarDeclNode node) throws SemanticException {
+    public Object visit(IterWithoutProcedureNode node) throws SemanticException {
+        node.getDeclaration().accept(this);
+        return null;
+    }
+
+    @Override
+    public Object visit(ItersNode node) throws SemanticException {
+        for (IterNode iter : node.getIterList()) {
+            if (iter.getDeclaration() instanceof VarDeclNode) {
+                continue;
+            }
+            iter.accept(this);
+        }
+        return null; // ItersNode does not return a value
+    }
+
+    @Override
+    public Object visit(IterNode node) throws SemanticException {
+        node.getDeclaration().accept(this);
+        return null;
+    }
+
+    @Override
+    public Object visit(VarDeclNode node) throws SemanticException {
+        // Variable declarations are handled in BodyNode
+        // But if there are global variable declarations, we need to handle them here
         for (DeclNode decl : node.getDecls()) {
-            code.append(decl.accept(this));
+            decl.accept(this);
         }
-        return ""; // VarDeclNode does not return a string directly
+        return null; // VarDeclNode does not return a value
     }
 
     @Override
-    public String visit(DeclNode node) throws SemanticException {
+    public Object visit(DeclNode node) throws SemanticException {
         StringJoiner declarations = new StringJoiner(", ");
         List<String> ids = node.getIds();
         List<ConstNode> consts = node.getConsts();
 
         if (node.getType() != null) {
-            // Caso: dichiarazione con un tipo specificato
+            // Case: declaration with a specified type
             String cType = mapType(node.getType());
             for (String id : ids) {
                 declarations.add(id);
@@ -115,55 +246,54 @@ public class CodeGeneratorVisitor implements Visitor<String> {
             indent();
             code.append(cType).append(" ").append(declarations.toString()).append(";\n");
         } else if (consts != null) {
-            // Caso: dichiarazione con assegnazione di costanti
+            // Case: declaration with constant assignments
             if (ids.size() != consts.size()) {
-                throw new SemanticException("Numero di identificatori e costanti non corrisponde.");
+                throw new SemanticException("Number of identifiers and constants does not match.");
             }
             for (int i = 0; i < ids.size(); i++) {
                 String id = ids.get(i);
                 ConstNode constant = consts.get(i);
-                String constantValue = constant.accept(this); // Genera il codice della costante
-                String cType = mapType(constant.getType()); // Ottiene il tipo della costante
+                String constantValue = (String) constant.accept(this); // Generate the constant code
+                String cType = mapType(constant.getType()); // Get the constant's type
 
                 indent();
                 code.append(cType).append(" ").append(id).append(" = ").append(constantValue).append(";\n");
             }
         } else {
-            throw new SemanticException("Dichiarazione non valida: manca il tipo o l'assegnazione.");
+            throw new SemanticException("Invalid declaration: missing type or assignment.");
         }
 
-        return ""; // DeclNode does not return a string directly
+        return null; // DeclNode does not return a value
     }
 
     @Override
-    public String visit(ConstNode node) throws SemanticException {
+    public Object visit(ConstNode node) throws SemanticException {
         Object value = node.getValue();
 
         if (value instanceof Integer) {
-            // Costante intera
+            // Integer constant
             return Integer.toString((Integer) value);
         } else if (value instanceof Double) {
-            // Costante reale
+            // Real constant
             return Double.toString((Double) value);
         } else if (value instanceof String) {
-            // Costante stringa (escapando i caratteri speciali per C)
+            // String constant (escaping special characters for C)
             return "\"" + ((String) value).replace("\"", "\\\"") + "\"";
         } else if (value instanceof Boolean) {
-            // Costante booleana
-            return (Boolean) value ? "1" : "0"; // In C, 1 è true e 0 è false
+            // Boolean constant
+            return (Boolean) value ? "1" : "0"; // In C, 1 is true and 0 is false
         } else {
-            throw new SemanticException("Tipo di costante non riconosciuto: " + value.getClass().getSimpleName());
+            throw new SemanticException("Unrecognized constant type: " + value.getClass().getSimpleName());
         }
     }
 
-
     @Override
-    public String visit(FunctionNode node) throws SemanticException {
+    public Object visit(FunctionNode node) throws SemanticException {
         // Function signature
         String returnType = mapType(node.getReturnTypes().get(0)); // Assuming single return type
         String paramsCode = "";
         if (node.getParams() != null) {
-            paramsCode = node.getParams().accept(this);
+            paramsCode = getParamsCode(node.getParams());
         }
         indent();
         code.append(returnType).append(" ").append(node.getName()).append("(")
@@ -172,36 +302,33 @@ public class CodeGeneratorVisitor implements Visitor<String> {
 
         // Function body
         if (node.getBody() != null) {
-            code.append(node.getBody().accept(this));
+            node.getBody().accept(this);
         }
 
         decreaseIndent();
         indent();
         code.append("}\n\n");
-        return ""; // FunctionNode does not return a string directly
+        return null; // FunctionNode does not return a value
     }
 
     @Override
-    public String visit(FuncParamsNode node) throws SemanticException {
-        StringJoiner paramsJoiner = new StringJoiner(", ");
-        for (ParamNode param : node.getParams()) {
-            paramsJoiner.add(param.accept(this));
-        }
-        return paramsJoiner.toString();
+    public Object visit(FuncParamsNode node) throws SemanticException {
+        // Already handled in getParamsCode
+        return null;
     }
 
     @Override
-    public String visit(ParamNode node) throws SemanticException {
-        String paramType = mapType(node.getType());
-        return paramType + " " + node.getName();
+    public Object visit(ParamNode node) throws SemanticException {
+        // Already handled in getParamsCode
+        return null;
     }
 
     @Override
-    public String visit(ProcedureNode node) throws SemanticException {
+    public Object visit(ProcedureNode node) throws SemanticException {
         // Procedure signature (void return type)
         String paramsCode = "";
         if (node.getParams() != null) {
-            paramsCode = node.getParams().accept(this);
+            paramsCode = getProcParamsCode(node.getParams());
         }
         indent();
         code.append("void ").append(node.getName()).append("(")
@@ -210,68 +337,83 @@ public class CodeGeneratorVisitor implements Visitor<String> {
 
         // Procedure body
         if (node.getBody() != null) {
-            code.append(node.getBody().accept(this));
+            node.getBody().accept(this);
         }
 
         decreaseIndent();
         indent();
         code.append("}\n\n");
-        return ""; // ProcedureNode does not return a string directly
+        return null; // ProcedureNode does not return a value
     }
 
     @Override
-    public String visit(ProcParamsNode node) throws SemanticException {
-        StringJoiner paramsJoiner = new StringJoiner(", ");
-        for (ProcParamNode param : node.getParams()) {
-            paramsJoiner.add(param.accept(this));
-        }
-        return paramsJoiner.toString();
+    public Object visit(ProcParamsNode node) throws SemanticException {
+        // Already handled in getProcParamsCode
+        return null;
     }
 
     @Override
-    public String visit(ProcParamNode node) throws SemanticException {
-        String paramType = mapType(node.getType());
-        if (node.isOut()) {
-            paramType = paramType + "*"; // Assuming 'out' parameters are integers for simplicity
-        }
-        return paramType + " " + node.getName();
+    public Object visit(ProcParamNode node) throws SemanticException {
+        // Already handled in getProcParamsCode
+        return null;
     }
 
     @Override
-    public String visit(BodyNode node) throws SemanticException {
-        StringBuilder bodyCode = new StringBuilder();
-        for (Visitable statement : node.getStatements()) {
-            String stmtCode = statement.accept(this);
-            if (stmtCode != null) {
-                bodyCode.append(stmtCode);
+    public Object visit(BodyNode node) throws SemanticException {
+        List<Visitable> statements = node.getStatements();
+
+        // Collect variable declarations
+        List<DeclNode> varDeclarations = new ArrayList<>();
+        List<Visitable> otherStatements = new ArrayList<>();
+
+        for (Visitable statement : statements) {
+            if (statement instanceof VarDeclNode) {
+                VarDeclNode varDeclNode = (VarDeclNode) statement;
+                varDeclarations.addAll(varDeclNode.getDecls());
+            } else {
+                otherStatements.add(statement);
             }
         }
-        return bodyCode.toString();
+
+        // Output variable declarations first
+        for (DeclNode decl : varDeclarations) {
+            decl.accept(this);
+        }
+
+        // Now output other statements
+        for (Visitable statement : otherStatements) {
+            statement.accept(this);
+        }
+
+        return null; // BodyNode does not return a value
     }
 
     @Override
-    public String visit(AssignStatNode node) throws SemanticException {
+    public Object visit(AssignStatNode node) throws SemanticException {
         List<String> ids = node.getIds();
         List<ExprNode> exprs = node.getExprs();
         List<Boolean> isOutIds = node.getIsOutIds();
 
         for (int i = 0; i < ids.size(); i++) {
             String id = ids.get(i);
-            String exprCode = exprs.get(i).accept(this);
+            String exprCode = (String) exprs.get(i).accept(this);
             indent();
-            code.append(isOutIds.get(i) ? "*"+id : id).append(" = ").append(exprCode).append(";\n");
+            code.append(isOutIds.get(i) ? "*" + id : id)
+                    .append(" = ")
+                    .append(exprCode)
+                    .append(";\n");
         }
-        return ""; // AssignStatNode does not return a string directly
+        return null; // AssignStatNode does not return a value
     }
 
     @Override
-    public String visit(ProcCallStatNode node) throws SemanticException {
+    public Object visit(ProcCallStatNode node) throws SemanticException {
         String procName = node.getProcCall().getProcedureName();
         StringBuilder argsBuilder = new StringBuilder();
         List<ProcExprNode> args = node.getProcCall().getArguments();
         for (int i = 0; i < args.size(); i++) {
             ProcExprNode arg = args.get(i);
-            String argCode = arg.accept(this);
+            String argCode = (String) arg.getExpr().accept(this);
             if (arg.isRef()) {
                 argsBuilder.append("&").append(argCode);
             } else {
@@ -283,58 +425,36 @@ public class CodeGeneratorVisitor implements Visitor<String> {
         }
         indent();
         code.append(procName).append("(").append(argsBuilder.toString()).append(");\n");
-        return ""; // ProcCallStatNode does not return a string directly
+        return null; // ProcCallStatNode does not return a value
     }
 
     @Override
-    public String visit(ReturnStatNode node) throws SemanticException {
+    public Object visit(ReturnStatNode node) throws SemanticException {
         if (node.getExprs().isEmpty()) {
             indent();
             code.append("return;\n");
         } else {
             StringJoiner returnJoiner = new StringJoiner(", ");
             for (ExprNode expr : node.getExprs()) {
-                returnJoiner.add(expr.accept(this));
+                String exprCode = (String) expr.accept(this);
+                returnJoiner.add(exprCode);
             }
             indent();
             code.append("return ").append(returnJoiner.toString()).append(";\n");
         }
-        return ""; // ReturnStatNode does not return a string directly
+        return null; // ReturnStatNode does not return a value
     }
 
     @Override
-    public String visit(WriteStatNode node) throws SemanticException {
-        StringBuilder argsBuilder = new StringBuilder();
-        List<IOArgNode> args = node.getArgs();
-        for (int i = 0; i < args.size(); i++) {
-            IOArgNode arg = args.get(i);
-            argsBuilder.append(arg.accept(this));
-            if (i < args.size() - 1) {
-                argsBuilder.append(", ");
-            }
-        }
-        indent();
-        code.append("printf(").append("\"");
-        for (IOArgNode arg : args) {
-            if (arg instanceof IOArgStringLiteralNode) {
-                String str = ((IOArgStringLiteralNode) arg).getValue();
-                code.append(str.replace("\"", "\\\""));
-            } else {
-                code.append("%d "); // Simplistic: assuming integer for other types
-            }
-        }
-        code.append("\"");
-        if (!args.isEmpty()) {
-            code.append(", ").append(argsBuilder.toString());
-        }
-        code.append(");\n");
-        return ""; // WriteStatNode does not return a string directly
-    }
-
-    @Override
-    public String visit(WriteReturnStatNode node) throws SemanticException {
+    public Object visit(WriteStatNode node) throws SemanticException {
         generateWriteStat(node.getArgs());
-        return "";
+        return null;
+    }
+
+    @Override
+    public Object visit(WriteReturnStatNode node) throws SemanticException {
+        generateWriteStat(node.getArgs());
+        return null;
     }
 
     private void generateWriteStat(List<IOArgNode> args) throws SemanticException {
@@ -346,17 +466,17 @@ public class CodeGeneratorVisitor implements Visitor<String> {
                 String str = ((IOArgStringLiteralNode) arg).getValue();
                 code.append(str.replace("\"", "\\\""));
             } else {
-                // Determine the format specifier based on the type
-                code.append("%d"); // Simplistic: assuming integer
+                // Use %d regardless of the variable type
+                code.append("%d");
             }
         }
         code.append("\"");
-        if (!args.isEmpty()) {
+        if (args.size() > 1) {
             code.append(", ");
             for (int i = 0; i < args.size(); i++) {
                 IOArgNode arg = args.get(i);
                 if (!(arg instanceof IOArgStringLiteralNode)) {
-                    String argCode = arg.accept(this);
+                    String argCode = (String) arg.accept(this);
                     argsBuilder.append(argCode);
                     if (i < args.size() - 1) {
                         argsBuilder.append(", ");
@@ -369,33 +489,33 @@ public class CodeGeneratorVisitor implements Visitor<String> {
     }
 
     @Override
-    public String visit(ReadStatNode node) throws SemanticException {
+    public Object visit(ReadStatNode node) throws SemanticException {
         for (IOArgNode arg : node.getArgs()) {
             indent();
-            code.append("scanf(\"%d\", ").append(arg.accept(this)).append(");\n"); // Simplistic: assuming integer
+            code.append("scanf(\"%d\", &").append(arg.accept(this)).append(");\n"); // Use %d regardless of type
         }
-        return ""; // ReadStatNode does not return a string directly
+        return null;
     }
 
     @Override
-    public String visit(IfStatNode node) throws SemanticException {
+    public Object visit(IfStatNode node) throws SemanticException {
         // Generate C 'if' statement
-        String condition = node.getCondition().accept(this);
+        String condition = (String) node.getCondition().accept(this);
         indent();
         code.append("if (").append(condition).append(") {\n");
         increaseIndent();
-        code.append(node.getThenBody().accept(this));
+        node.getThenBody().accept(this);
         decreaseIndent();
         indent();
         code.append("}\n");
 
         // Handle elif blocks
         for (ElifNode elif : node.getElifBlocks()) {
-            String elifCondition = elif.getCondition().accept(this);
+            String elifCondition = (String) elif.getCondition().accept(this);
             indent();
             code.append("else if (").append(elifCondition).append(") {\n");
             increaseIndent();
-            code.append(elif.getBody().accept(this));
+            elif.getBody().accept(this);
             decreaseIndent();
             indent();
             code.append("}\n");
@@ -406,36 +526,37 @@ public class CodeGeneratorVisitor implements Visitor<String> {
             indent();
             code.append("else {\n");
             increaseIndent();
-            code.append(node.getElseBlock().accept(this));
+            node.getElseBlock().accept(this);
             decreaseIndent();
             indent();
             code.append("}\n");
         }
 
-        return ""; // IfStatNode does not return a string directly
+        return null; // IfStatNode does not return a value
     }
 
     @Override
-    public String visit(WhileStatNode node) throws SemanticException {
+    public Object visit(WhileStatNode node) throws SemanticException {
         // Generate C 'while' loop
-        String condition = node.getCondition().accept(this);
+        String condition = (String) node.getCondition().accept(this);
         indent();
         code.append("while (").append(condition).append(") {\n");
         increaseIndent();
-        code.append(node.getBody().accept(this));
+        node.getBody().accept(this);
         decreaseIndent();
         indent();
         code.append("}\n");
-        return ""; // WhileStatNode does not return a string directly
+        return null; // WhileStatNode does not return a value
     }
 
     @Override
-    public String visit(FunCallNode node) throws SemanticException {
+    public Object visit(FunCallNode node) throws SemanticException {
         String functionName = node.getFunctionName();
         StringBuilder argsBuilder = new StringBuilder();
         List<ExprNode> args = node.getArguments();
         for (int i = 0; i < args.size(); i++) {
-            argsBuilder.append(args.get(i).accept(this));
+            String argCode = (String) args.get(i).accept(this);
+            argsBuilder.append(argCode);
             if (i < args.size() - 1) {
                 argsBuilder.append(", ");
             }
@@ -444,105 +565,189 @@ public class CodeGeneratorVisitor implements Visitor<String> {
     }
 
     @Override
-    public String visit(ProcCallNode node) throws SemanticException {
+    public Object visit(ProcCallNode node) throws SemanticException {
+        // For procedure calls used as expressions (if any)
         String procedureName = node.getProcedureName();
         StringBuilder argsBuilder = new StringBuilder();
         List<ProcExprNode> args = node.getArguments();
         for (int i = 0; i < args.size(); i++) {
             ProcExprNode arg = args.get(i);
+            String argCode = (String) arg.getExpr().accept(this);
             if (arg.isRef()) {
-                argsBuilder.append("&").append(arg.getExpr().accept(this));
+                argsBuilder.append("&").append(argCode);
             } else {
-                argsBuilder.append(arg.getExpr().accept(this));
+                argsBuilder.append(argCode);
             }
             if (i < args.size() - 1) {
                 argsBuilder.append(", ");
             }
         }
-        return procedureName + "(" + argsBuilder.toString() + ");\n";
+        return procedureName + "(" + argsBuilder.toString() + ")";
     }
 
     @Override
-    public String visit(ElifNode node) throws SemanticException {
+    public Object visit(ElifNode node) throws SemanticException {
         // Handled within IfStatNode
-        return node.getBody().accept(this);
+        return null;
     }
 
     @Override
-    public String visit(ElseNode node) throws SemanticException {
+    public Object visit(ElseNode node) throws SemanticException {
         // Handled within IfStatNode
-        return node.getBody().accept(this);
+        return null;
     }
 
     @Override
-    public String visit(IOArgIdentifierNode node) throws SemanticException {
+    public Object visit(IOArgIdentifierNode node) throws SemanticException {
         return node.getIdentifier();
     }
 
     @Override
-    public String visit(IOArgStringLiteralNode node) throws SemanticException {
+    public Object visit(IOArgStringLiteralNode node) throws SemanticException {
         return "\"" + node.getValue().replace("\"", "\\\"") + "\"";
     }
 
     @Override
-    public String visit(IOArgBinaryNode node) throws SemanticException {
-        String left = node.getLeft().accept(this);
-        String right = node.getRight().accept(this);
-        String operator = node.getOperator();
-        return left + " " + operator + " " + right;
+    public Object visit(IOArgBinaryNode node) throws SemanticException {
+        String left = (String) node.getLeft().accept(this);
+        String right = (String) node.getRight().accept(this);
+        String operator = mapOperatorToC(node.getOperator());
+        return "(" + left + " " + operator + " " + right + ")";
     }
 
     @Override
-    public String visit(DollarExprNode node) throws SemanticException {
+    public Object visit(DollarExprNode node) throws SemanticException {
         return node.getExpr().accept(this);
     }
 
     @Override
-    public String visit(ProcExprNode node) throws SemanticException {
+    public Object visit(ProcExprNode node) throws SemanticException {
         return node.getExpr().accept(this);
     }
 
     @Override
-    public String visit(RealConstNode node) throws SemanticException {
+    public Object visit(RealConstNode node) throws SemanticException {
         return Double.toString(node.getValue());
     }
 
     @Override
-    public String visit(IntConstNode node) throws SemanticException {
+    public Object visit(IntConstNode node) throws SemanticException {
         return Integer.toString(node.getValue());
     }
 
     @Override
-    public String visit(StringConstNode node) throws SemanticException {
+    public Object visit(StringConstNode node) throws SemanticException {
         return "\"" + node.getValue().replace("\"", "\\\"") + "\"";
     }
 
     @Override
-    public String visit(IdentifierNode node) throws SemanticException {
-        return node.getIsOutInProcedure() ? "*"+node.getName() : node.getName();
+    public Object visit(IdentifierNode node) throws SemanticException {
+        return node.getIsOutInProcedure() ? "*" + node.getName() : node.getName();
     }
 
     @Override
-    public String visit(BooleanConstNode node) throws SemanticException {
+    public Object visit(BooleanConstNode node) throws SemanticException {
         return node.getValue() ? "1" : "0"; // C uses 1 for true and 0 for false
     }
 
     @Override
-    public String visit(BinaryExprNode node) throws SemanticException {
-        // Ottieni il codice generato per i nodi sinistro e destro
+    public Object visit(BinaryExprNode node) throws SemanticException {
+        String operator = node.getOperator();
         String leftCode = (String) node.getLeft().accept(this);
         String rightCode = (String) node.getRight().accept(this);
 
-        // Mappa l'operatore al corrispondente in C
-        String operator = mapOperatorToC(node.getOperator());
+        if (operator.equals("+")) {
+            Type leftType = node.getLeft().getType();
+            Type rightType = node.getRight().getType();
 
-        // Genera il codice per l'espressione binaria
-        return "(" + leftCode + " " + operator + " " + rightCode + ")";
+            if (leftType == Type.STRING || rightType == Type.STRING) {
+                // At least one operand is a string, perform concatenation
+                String resultVar = generateConcatenationCode(leftCode, leftType, rightCode, rightType);
+                return resultVar;
+            } else {
+                // Both operands are numbers, perform normal addition
+                return "(" + leftCode + " + " + rightCode + ")";
+            }
+        } else {
+            // For other operators, generate normal code
+            String cOperator = mapOperatorToC(operator);
+            return "(" + leftCode + " " + cOperator + " " + rightCode + ")";
+        }
     }
 
-    /**
-     * Mappa l'operatore del linguaggio sorgente all'operatore equivalente in C.
-     */
+    private String generateConcatenationCode(String leftCode, Type leftType, String rightCode, Type rightType) throws SemanticException {
+        String resultVar = getNextTempVar();
+        indent();
+        code.append("char ").append(resultVar).append("[1024];\n");
+
+        // Convert left operand to string
+        String leftStrVar = getNextTempVar();
+        indent();
+        code.append("char ").append(leftStrVar).append("[512];\n");
+        indent();
+        if (leftType == Type.STRING) {
+            code.append("strcpy(").append(leftStrVar).append(", ").append(leftCode).append(");\n");
+        } else if (leftType == Type.INTEGER) {
+            code.append("sprintf(").append(leftStrVar).append(", \"%d\", ").append(leftCode).append(");\n");
+        } else if (leftType == Type.REAL) {
+            code.append("sprintf(").append(leftStrVar).append(", \"%f\", ").append(leftCode).append(");\n");
+        } else {
+            throw new SemanticException("Unsupported type for concatenation: " + leftType);
+        }
+
+        // Convert right operand to string
+        String rightStrVar = getNextTempVar();
+        indent();
+        code.append("char ").append(rightStrVar).append("[512];\n");
+        indent();
+        if (rightType == Type.STRING) {
+            code.append("strcpy(").append(rightStrVar).append(", ").append(rightCode).append(");\n");
+        } else if (rightType == Type.INTEGER) {
+            code.append("sprintf(").append(rightStrVar).append(", \"%d\", ").append(rightCode).append(");\n");
+        } else if (rightType == Type.REAL) {
+            code.append("sprintf(").append(rightStrVar).append(", \"%f\", ").append(rightCode).append(");\n");
+        } else {
+            throw new SemanticException("Unsupported type for concatenation: " + rightType);
+        }
+
+        // Concatenate the strings into resultVar
+        indent();
+        code.append("snprintf(").append(resultVar).append(", sizeof(").append(resultVar).append("), \"%s%s\", ").append(leftStrVar).append(", ").append(rightStrVar).append(");\n");
+
+        // Return resultVar
+        return resultVar;
+    }
+
+    @Override
+    public Object visit(UnaryExprNode node) throws SemanticException {
+        String operator = node.getOperator();
+        String expr = (String) node.getExpr().accept(this);
+        switch (operator) {
+            case "uminus":
+                return "(-" + expr + ")";
+            case "not":
+                return "(!" + expr + ")";
+            default:
+                throw new SemanticException("Unrecognized unary operator: " + operator);
+        }
+    }
+
+    // Helper method to map custom types to C types
+    private String mapType(Type type) throws SemanticException {
+        switch (type) {
+            case INTEGER:
+                return "int";
+            case REAL:
+                return "double";
+            case STRING:
+                return "char*";
+            case BOOLEAN:
+                return "bool"; // Ensure to include <stdbool.h> in the generated code
+            default:
+                throw new SemanticException("Unsupported type: " + type);
+        }
+    }
+
     private String mapOperatorToC(String operator) {
         switch (operator) {
             case "and": return "&&";
@@ -559,68 +764,7 @@ public class CodeGeneratorVisitor implements Visitor<String> {
             case "*": return "*";
             case "/": return "/";
             default:
-                throw new IllegalArgumentException("Operatore non supportato: " + operator);
+                throw new IllegalArgumentException("Unsupported operator: " + operator);
         }
-    }
-
-    @Override
-    public String visit(UnaryExprNode node) throws SemanticException {
-        String operator = node.getOperator();
-        String expr = node.getExpr().accept(this);
-        switch (operator) {
-            case "uminus":
-                return "(-" + expr + ")";
-            case "not":
-                return "(!" + expr + ")";
-            default:
-                throw new SemanticException("Operatore unario non riconosciuto: " + operator);
-        }
-    }
-
-    // Helper method to map custom types to C types
-    private String mapType(Type type) throws SemanticException {
-        switch (type) {
-            case INTEGER:
-                return "int";
-            case REAL:
-                return "double";
-            case STRING:
-                return "char*";
-            case BOOLEAN:
-                return "bool"; // Ensure to include <stdbool.h> in the generated code
-//            case VOID:
-//                return "void";
-            default:
-                throw new SemanticException("Tipo non supportato: " + type);
-        }
-    }
-
-    // Optional: Determine type from operator if needed
-    private Type determineTypeFromOperator(String operator, String operandType) throws SemanticException {
-        switch (operator) {
-            case "+":
-            case "-":
-            case "*":
-            case "/":
-                if (operandType.equals("int")) {
-                    return Type.INTEGER;
-                } else if (operandType.equals("double")) {
-                    return Type.REAL;
-                }
-                break;
-            case "and":
-            case "or":
-                return Type.BOOLEAN;
-            case ">":
-            case ">=":
-            case "<":
-            case "<=":
-            case "==":
-            case "!=":
-                return Type.BOOLEAN;
-            default:
-                throw new SemanticException("Operatore non riconosciuto: " + operator);
-        }
-        throw new SemanticException("Tipo dell'operando non compatibile per l'operatore: " + operator);
     }
 }
