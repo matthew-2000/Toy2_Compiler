@@ -796,34 +796,29 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private String generateStringComparisonCode(String leftCode, String rightCode, String operator) throws SemanticException {
-        String comparisonResult = getNextTempVar();
-        indent();
-        code.append("int ").append(comparisonResult).append(" = strcmp(").append(leftCode).append(", ").append(rightCode).append(");\n");
-
         String condition;
         switch (operator) {
             case "==":
-                condition = "(" + comparisonResult + " == 0)";
+                condition = "(strcmp(" + leftCode + ", " + rightCode + ") == 0)";
                 break;
             case "!=":
-                condition = "(" + comparisonResult + " != 0)";
+                condition = "(strcmp(" + leftCode + ", " + rightCode + ") != 0)";
                 break;
             case "<":
-                condition = "(" + comparisonResult + " < 0)";
+                condition = "(strcmp(" + leftCode + ", " + rightCode + ") < 0)";
                 break;
             case ">":
-                condition = "(" + comparisonResult + " > 0)";
+                condition = "(strcmp(" + leftCode + ", " + rightCode + ") > 0)";
                 break;
             case "<=":
-                condition = "(" + comparisonResult + " <= 0)";
+                condition = "(strcmp(" + leftCode + ", " + rightCode + ") <= 0)";
                 break;
             case ">=":
-                condition = "(" + comparisonResult + " >= 0)";
+                condition = "(strcmp(" + leftCode + ", " + rightCode + ") >= 0)";
                 break;
             default:
                 throw new SemanticException("Operatore di confronto non supportato per le stringhe: " + operator);
         }
-
         return condition;
     }
 
