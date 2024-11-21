@@ -17,23 +17,13 @@ public class Main {
     public static void main(String[] args) {
         // Percorso del file di test
         String filePath = "test/test7.txt";
+        String outputCFile = "output.c";
+        String outputExecutable = "output";
 
         try {
             // Creazione del lexer
             FileReader fileReader = new FileReader(filePath);
             Toy2Lexer lexer = new Toy2Lexer(fileReader);
-
-            // Visualizza tutti i token trovati dal lexer
-            System.out.println("=== Token riconosciuti dal lexer ===");
-            Symbol token;
-            while ((token = lexer.next_token()).sym != sym.EOF) {
-                System.out.println("Token: " + getTokenName(token.sym) + " | Valore: " + token.value);
-            }
-            System.out.println("=== Fine dei token ===");
-
-            // Reinizializza il lexer per il parsing
-            fileReader = new FileReader(filePath);
-            lexer = new Toy2Lexer(fileReader);
 
             // Creazione del parser con il lexer
             parser parser = new parser(lexer);
@@ -45,7 +35,6 @@ public class Main {
 
             // Creazione del SymbolTableManager condiviso
             SymbolTableManager symbolTableManager = new SymbolTableManager();
-
             // Scope Checking
             System.out.println("\n=== Avvio dello scope checking ===");
             ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor(symbolTableManager);
@@ -68,6 +57,8 @@ public class Main {
             // Salva il codice generato su un file
             saveGeneratedCodeToFile("output.c", generatedCode);
             System.out.println("Il codice generato è stato salvato in 'output.c'");
+            // Compile and Run the C code
+            compileAndRunCCode(outputCFile, outputExecutable);
 
         } catch (FileNotFoundException e) {
             System.err.println("Errore: il file " + filePath + " non è stato trovato.");
@@ -90,62 +81,24 @@ public class Main {
         }
     }
 
-    private static String getTokenName(int tokenSym) {
-        return switch (tokenSym) {
-            case sym.VAR -> "VAR";
-            case sym.PROC -> "PROC";
-            case sym.ENDPROC -> "ENDPROC";
-            case sym.FUNC -> "FUNC";
-            case sym.ENDFUNC -> "ENDFUNC";
-            case sym.IF -> "IF";
-            case sym.THEN -> "THEN";
-            case sym.ELSE -> "ELSE";
-            case sym.ELIF -> "ELIF";
-            case sym.ENDIF -> "ENDIF";
-            case sym.WHILE -> "WHILE";
-            case sym.DO -> "DO";
-            case sym.ENDWHILE -> "ENDWHILE";
-            case sym.RETURN -> "RETURN";
-            case sym.NUMBER_LITERAL -> "NUMBER_LITERAL";
-            case sym.REAL_CONST -> "REAL_CONST";
-            case sym.STRING_LITERAL -> "STRING_LITERAL";
-            case sym.TRUE -> "TRUE";
-            case sym.FALSE -> "FALSE";
-            case sym.IDENTIFIER -> "ID";
-            case sym.ASSIGN -> "ASSIGN";
-            case sym.PLUS -> "PLUS";
-            case sym.MINUS -> "MINUS";
-            case sym.TIMES -> "TIMES";
-            case sym.DIV -> "DIV";
-            case sym.EQ -> "EQ";
-            case sym.NE -> "NE";
-            case sym.LT -> "LT";
-            case sym.LE -> "LE";
-            case sym.GT -> "GT";
-            case sym.GE -> "GE";
-            case sym.AND -> "AND";
-            case sym.OR -> "OR";
-            case sym.NOT -> "NOT";
-            case sym.LPAR -> "LPAR";
-            case sym.RPAR -> "RPAR";
-            case sym.SEMI -> "SEMI";
-            case sym.COLON -> "COLON";
-            case sym.COMMA -> "COMMA";
-            case sym.DOLLAR -> "DOLLAR";
-            case sym.WRITE -> "WRITE";
-            case sym.WRITERETURN -> "WRITERETURN";
-            case sym.READ -> "READ";
-            case sym.REF -> "REF";
-            case sym.ENDVAR -> "ENDVAR";
-            case sym.REAL -> "REAL";
-            case sym.INTEGER -> "INTEGER";
-            case sym.STRING -> "STRING";
-            case sym.BOOLEAN -> "BOOLEAN";
-            case sym.UMINUS -> "UMINUS";
-            case sym.TYPERETURN -> "TYPERETURN";
-            case sym.OUT -> "OUT";
-            case sym.EOF -> "EOF";
-            default -> "UNKNOWN";
-        };
+    private static void compileAndRunCCode(String sourceFile, String outputExecutable) {
+        try {
+            // Step 1: Compile the C code
+            Process compileProcess = new ProcessBuilder("gcc", sourceFile, "-o", outputExecutable)
+                    .inheritIO() // Redirects the output and error streams to the console
+                    .start();
+
+            // Wait for the compilation to complete
+            int compileExitCode = compileProcess.waitFor();
+            if (compileExitCode != 0) {
+                System.err.println("Errore durante la compilazione del codice C.");
+                return;
+            }
+            System.out.println("Compilazione completata con successo.");
+        } catch (IOException | InterruptedException e) {
+            System.err.println("Errore durante la compilazione o l'esecuzione del codice C: " + e.getMessage());
+            e.printStackTrace();
+        }
     }
+
 }

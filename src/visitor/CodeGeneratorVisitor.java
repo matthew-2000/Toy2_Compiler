@@ -839,7 +839,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 return resultVar;
             } else {
                 // Somma normale
-                return "(" + leftCode + " + " + rightCode + ")";
+                return leftCode + " + " + rightCode;
             }
         } else if (isComparisonOperator(operator)) {
             if (leftType == Type.STRING && rightType == Type.STRING) {
@@ -849,12 +849,12 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             } else {
                 // Confronto tra altri tipi
                 String cOperator = mapOperatorToC(operator);
-                return "(" + leftCode + " " + cOperator + " " + rightCode + ")";
+                return leftCode + " " + cOperator + " " + rightCode;
             }
         } else {
             // Altri operatori
             String cOperator = mapOperatorToC(operator);
-            return "(" + leftCode + " " + cOperator + " " + rightCode + ")";
+            return leftCode + " " + cOperator + " " + rightCode;
         }
     }
 
