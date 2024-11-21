@@ -1,7 +1,8 @@
 var
 a, b: integer;  % Dichiarazioni di variabili senza inizializzazione %
 x: real;        % Dichiarazione di una variabile reale %
-y ^= "ciao";\    % Dichiarazione e inizializzazione di una stringa %
+y ^= "ciao";
+d : string;\    % Dichiarazione e inizializzazione di una stringa %
 
 func somma(a: integer, b: integer) -> integer:
     var result: integer;\

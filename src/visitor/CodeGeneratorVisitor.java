@@ -15,6 +15,9 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     private List<String> functionPrototypes = new ArrayList<>();
     private List<DeclNode> globalDeclarations = new ArrayList<>();
     private Deque<FunctionNode> functionStack = new ArrayDeque<>();
+    private List<String> globalInitializations = new ArrayList<>();
+    private List<String> globalDeallocations = new ArrayList<>();
+    private boolean isGlobalScope = true;
 
     public CodeGeneratorVisitor() {
         this.code = new StringBuilder();
@@ -47,6 +50,37 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         return "tmp_" + (tempVarCounter++);
     }
 
+    private void addGlobalInitialization(String id, String constantValue, boolean hasValue) {
+        StringBuilder initCode = new StringBuilder();
+
+        if (hasValue) {
+            // Inizializzazione con valore
+            initCode.append(id).append(" = malloc(strlen(").append(constantValue).append(") + 1);\n");
+            initCode.append("    if (!").append(id).append(") {\n");
+            initCode.append("        fprintf(stderr, \"Errore: allocazione fallita\\n\");\n");
+            initCode.append("        exit(1);\n");
+            initCode.append("    }\n");
+            initCode.append("    strcpy(").append(id).append(", ").append(constantValue).append(");");
+        } else {
+            // Inizializzazione senza valore (allocazione standard)
+            initCode.append(id).append(" = malloc(sizeof(char) * 256);\n");
+            initCode.append("    if (!").append(id).append(") {\n");
+            initCode.append("        fprintf(stderr, \"Errore: allocazione fallita\\n\");\n");
+            initCode.append("        exit(1);\n");
+            initCode.append("    }\n");
+            initCode.append("    strcpy(").append(id).append(", \"\");");
+        }
+
+        globalInitializations.add(initCode.toString());
+
+        // Aggiungi il codice per la deallocazione
+        String deallocCode = "if (" + id + ") {\n";
+        deallocCode += "        free(" + id + ");\n";
+        deallocCode += "        " + id + " = NULL;\n";
+        deallocCode += "    }";
+        globalDeallocations.add(deallocCode);
+    }
+
     @Override
     public Object visit(ProgramNode node) throws SemanticException {
         // Include necessary standard libraries
@@ -69,8 +103,13 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         for (DeclNode globalDecl : globalDeclarations) {
             globalDecl.accept(this); // Genera il codice per ogni dichiarazione globale
         }
+        isGlobalScope = false;
 
         code.append("\n");
+
+        // Genera le funzioni di inizializzazione e deallocazione
+        generateGlobalInitializationFunction();
+        generateGlobalDeallocationFunction();
 
         // Rileva e genera le dichiarazioni per le funzioni/procedure
         if (node.getItersWithoutProcedure() != null) {
@@ -98,6 +137,26 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         }
 
         return code.toString();
+    }
+
+    private void generateGlobalInitializationFunction() {
+        if (!globalInitializations.isEmpty()) {
+            code.append("\nvoid initialize_globals() {\n");
+            for (String init : globalInitializations) {
+                code.append("    ").append(init).append("\n");
+            }
+            code.append("}\n");
+        }
+    }
+
+    private void generateGlobalDeallocationFunction() {
+        if (!globalDeallocations.isEmpty()) {
+            code.append("\nvoid free_globals() {\n");
+            for (String dealloc : globalDeallocations) {
+                code.append("    ").append(dealloc).append("\n");
+            }
+            code.append("}\n");
+        }
     }
 
     private void collectGlobalDeclarations(ItersWithoutProcedureNode node) {
@@ -262,12 +321,28 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             String cType = mapType(node.getType());
             for (String id : ids) {
                 if (node.getType() == Type.STRING) {
-                    // For strings, allocate memory dynamically
-                    indent();
-                    code.append("char ").append(id).append("[256];\n");
+                    if (isGlobalScope) {
+                        // Dichiarazione globale: inizializzata a NULL
+                        indent();
+                        code.append("char* ").append(id).append(" = NULL;\n");
+                        // Aggiungi codice per l'inizializzazione globale
+                        addGlobalInitialization(id, null, false);
+                    } else {
+                        // Dichiarazione locale: alloca immediatamente
+                        indent();
+                        code.append("char* ").append(id).append(" = malloc(256 * sizeof(char));\n");
+                        checkAllocation(id);
+                    }
                 } else {
-                    indent();
-                    code.append(cType).append(" ").append(id).append(";\n");
+                    if (isGlobalScope) {
+                        // Dichiarazione globale per altri tipi
+                        indent();
+                        code.append(cType).append(" ").append(id).append(";\n");
+                    } else {
+                        // Dichiarazione locale
+                        indent();
+                        code.append(cType).append(" ").append(id).append(";\n");
+                    }
                 }
             }
         } else if (consts != null) {
@@ -282,12 +357,30 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 String cType = mapType(constant.getType()); // Get the constant's type
 
                 if (constant.getType() == Type.STRING) {
-                    // For string constants, allocate and initialize dynamically
-                    indent();
-                    code.append("char* ").append(id).append(" = ").append(constantValue).append(";\n");
+                    if (isGlobalScope) {
+                        // Dichiarazione globale con inizializzazione
+                        indent();
+                        code.append("char* ").append(id).append(" = NULL;\n");
+                        // Aggiungi codice per l'inizializzazione globale con valore
+                        addGlobalInitialization(id, constantValue, true);
+                    } else {
+                        // Dichiarazione locale con inizializzazione
+                        indent();
+                        code.append("char* ").append(id).append(" = malloc(strlen(").append(constantValue).append(") + 1);\n");
+                        checkAllocation(id);
+                        indent();
+                        code.append("strcpy(").append(id).append(", ").append(constantValue).append(");\n");
+                    }
                 } else {
-                    indent();
-                    code.append(cType).append(" ").append(id).append(" = ").append(constantValue).append(";\n");
+                    if (isGlobalScope) {
+                        // Dichiarazione globale per altri tipi con inizializzazione
+                        indent();
+                        code.append(cType).append(" ").append(id).append(" = ").append(constantValue).append(";\n");
+                    } else {
+                        // Dichiarazione locale con inizializzazione
+                        indent();
+                        code.append(cType).append(" ").append(id).append(" = ").append(constantValue).append(";\n");
+                    }
                 }
             }
         } else {
@@ -295,6 +388,19 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         }
 
         return null; // DeclNode does not return a value
+    }
+
+    private void checkAllocation(String id) {
+        indent();
+        code.append("if (!").append(id).append(") {\n");
+        increaseIndent();
+        indent();
+        code.append("fprintf(stderr, \"Errore: allocazione fallita\\n\");\n");
+        indent();
+        code.append("exit(1);\n");
+        decreaseIndent();
+        indent();
+        code.append("}\n");
     }
 
     @Override
@@ -382,9 +488,25 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         }
         increaseIndent();
 
+        if (node.getName().equals("main") && !globalInitializations.isEmpty()) {
+            // Chiama initialize_globals
+            indent();
+            code.append("initialize_globals();\n\n");
+        }
+
         // Procedure body
         if (node.getBody() != null) {
             node.getBody().accept(this);
+        }
+
+        if (node.getName().equals("main") && !globalInitializations.isEmpty()) {
+            // Chiama free_globals prima di uscire
+            indent();
+            code.append("free_globals();\n");
+
+            // Aggiungi return 0;
+            indent();
+            code.append("return 0;\n");
         }
 
         decreaseIndent();
@@ -746,7 +868,6 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         }
         return null;
     }
-
 
     @Override
     public Object visit(ProcCallNode node) throws SemanticException {
