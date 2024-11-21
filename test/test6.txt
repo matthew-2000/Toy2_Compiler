@@ -1,0 +1,42 @@
+var
+a, b: integer;  % Dichiarazioni di variabili senza inizializzazione %
+x: real;        % Dichiarazione di una variabile reale %
+y ^= "ciao";\    % Dichiarazione e inizializzazione di una stringa %
+
+func somma(a: integer, b: integer) -> integer:
+    var result: integer;\
+    result ^= a + b;  % Somma dei due parametri %
+    return result;
+endfunc
+
+func doppia(a: integer) -> integer:
+    return a * 2;  % Calcolo del doppio del valore %
+endfunc
+
+proc scambia(out a: integer, out b: integer):
+    var temp: integer;\
+    temp ^= a;       % Variabile temporanea per lo scambio %
+    a ^= b;
+    b ^= temp;
+endproc
+
+proc main():
+    var i, j: integer;\
+    var sommaRisultato: integer;\
+    var doppiaRisultato: integer;\
+    var testoOutput: string;\
+
+    -->! "Inserisci due numeri interi:";  % Output con ritorno a capo %
+    <-- "Numero 1: " $(i);               % Input per il primo numero %
+    <-- "Numero 2: " $(j);               % Input per il secondo numero %
+
+    sommaRisultato ^= somma(i, j);       % Chiamata a funzione %
+    -->! "La somma dei due numeri è: " $(sommaRisultato);
+
+    doppiaRisultato ^= doppia(i);        % Chiamata a funzione %
+    -->! "Il doppio del primo numero è: " $(doppiaRisultato);
+
+    -->! "Scambio dei due numeri...";    % Informazione su operazione %
+    scambia(@i, @j);                     % Chiamata a procedura %
+    -->! "Dopo lo scambio, Numero 1: " $(i) ", Numero 2: " $(j);
+endproc

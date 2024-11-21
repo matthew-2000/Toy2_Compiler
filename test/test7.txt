@@ -1,0 +1,52 @@
+var p: boolean;   % Variabile booleana %
+q, r: real;   % Variabili reali %
+s: string;    % Variabile stringa %
+count: integer;\ % Variabile intera per il contatore %
+
+func valori(a: real, b: real) -> real, boolean:
+    var somma: real;\
+    somma ^= a + b; % Calcola la somma %
+    return somma, (somma > 10); % Ritorna la somma e un booleano %
+endfunc
+
+proc stampaBenvenuto():
+    -->! "Benvenuto al programma di test!"; % Output semplice con ritorno a capo %
+endproc
+
+proc contaFino(n: integer):
+    var i: integer;\
+    i ^= 0; % Inizializza il contatore %
+
+    while i < n do
+        -->! "Contatore: " $(i);
+        i ^= i + 1; % Incremento del contatore %
+    endwhile;
+endproc
+
+proc main():
+    var a, b: real;\
+    var risultato: real;\
+    var check: boolean;\
+
+    stampaBenvenuto(); % Chiamata a procedura senza parametri %
+
+    -->! "Inserisci due numeri reali:";
+    <-- "Numero 1: " $(a); % Input primo numero %
+    <-- "Numero 2: " $(b); % Input secondo numero %
+
+    risultato, check ^= valori(a, b); % Chiamata a funzione con ritorni multipli %
+    -->! "La somma dei numeri è: " $(risultato); % Output del risultato %
+
+    if check then
+        -->! "La somma è maggiore di 10!";
+    elseif risultato = 10 then
+        -->! "La somma è esattamente 10!";
+    else
+        -->! "La somma è minore di 10!";
+    endif;
+
+    -->! "Avvio del conteggio...";
+    contaFino(5); % Chiamata a procedura con parametro %
+
+    -->! "Fine del programma di test!";
+endproc

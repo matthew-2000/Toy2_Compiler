@@ -211,55 +211,74 @@ public class TypeCheckingVisitor implements Visitor {
         List<String> ids = node.getIds();
         List<ExprNode> exprs = node.getExprs();
 
-        if (ids.size() != exprs.size()) {
-            throw new SemanticException("Numero di identificatori e espressioni non corrisponde.");
-        }
+        // Variabile per tracciare il numero totale di espressioni e valori restituiti
+        int totalExpressions = 0;
 
-        for (int i = 0; i < ids.size(); i++) {
-            String id = ids.get(i);
-            ExprNode expr = exprs.get(i);
-
-            // Controlla la dichiarazione dell'identificatore
-            Symbol symbol = currentScope.lookup(id);
-            if (symbol == null) {
-                throw new SemanticException("Identificatore '" + id + "' non dichiarato.");
-            }
-
-            // Gestione del caso di FunCallNode che restituisce più tipi
+        // Itera su tutte le espressioni
+        for (ExprNode expr : exprs) {
             if (expr instanceof FunCallNode) {
                 FunCallNode funcCall = (FunCallNode) expr;
 
                 // Ottieni i tipi restituiti dalla funzione
                 List<Type> returnTypes = (List<Type>) funcCall.accept(this);
 
-                // Assicurati che ci sia corrispondenza nel numero di tipi
-                if (returnTypes.size() != ids.size()) {
-                    throw new SemanticException("Numero di valori restituiti dalla funzione '" +
-                            funcCall.getFunctionName() + "' non corrisponde al numero di variabili.");
-                }
+                // Incrementa il conteggio totale con i valori restituiti dalla funzione
+                totalExpressions += returnTypes.size();
+            } else {
+                // Ogni espressione standard conta come un singolo valore
+                totalExpressions++;
+            }
+        }
 
-                // Verifica i tipi restituiti dalla funzione per ciascun identificatore
-                for (int j = 0; j < returnTypes.size(); j++) {
-                    Type idType = currentScope.lookup(ids.get(j)).getType();
-                    Type returnType = returnTypes.get(j);
+        // Confronta il numero totale di valori con il numero di identificatori
+        if (totalExpressions != ids.size()) {
+            throw new SemanticException("Numero totale di valori restituiti ed espressioni (" + totalExpressions +
+                    ") non corrisponde al numero di identificatori (" + ids.size() + ").");
+        }
+
+        // Controlla la compatibilità dei tipi per ciascun identificatore
+        int idIndex = 0;
+        for (ExprNode expr : exprs) {
+            if (expr instanceof FunCallNode) {
+                FunCallNode funcCall = (FunCallNode) expr;
+
+                // Ottieni i tipi restituiti dalla funzione
+                List<Type> returnTypes = (List<Type>) funcCall.accept(this);
+
+                for (Type returnType : returnTypes) {
+                    String id = ids.get(idIndex);
+                    Type idType = currentScope.lookup(id).getType();
 
                     if (idType != returnType) {
-                        throw new SemanticException("Tipo non compatibile per '" + ids.get(j) +
-                                "': atteso " + idType + ", trovato " + returnType + ".");
+                        throw new SemanticException("Tipo non compatibile per '" + id + "': atteso " + idType +
+                                ", trovato " + returnType + ".");
                     }
+
+                    // Controllo dell'immutabilità se l'identificatore è un parametro
+                    Symbol symbol = currentScope.lookup(id);
+                    if (symbol.getKind() == SymbolKind.VARIABLE && symbol.isParameter()) {
+                        throw new SemanticException("Parametro '" + id + "' è immutabile e non può essere assegnato.");
+                    }
+
+                    idIndex++;
                 }
             } else {
                 // Caso standard: espressione singola restituisce un tipo
+                String id = ids.get(idIndex);
                 Type exprType = (Type) expr.accept(this);
-                Type idType = symbol.getType();
+                Type idType = currentScope.lookup(id).getType();
+
                 if (idType != exprType) {
                     throw new SemanticException("Assegnazione a '" + id + "' non compatibile: " + idType + " := " + exprType);
                 }
-            }
 
-            // Controllo dell'immutabilità se è un parametro
-            if (symbol.getKind() == SymbolKind.VARIABLE && symbol.isParameter()) {
-                throw new SemanticException("Parametro '" + id + "' è immutabile e non può essere assegnato.");
+                // Controllo dell'immutabilità se l'identificatore è un parametro
+                Symbol symbol = currentScope.lookup(id);
+                if (symbol.getKind() == SymbolKind.VARIABLE && symbol.isParameter()) {
+                    throw new SemanticException("Parametro '" + id + "' è immutabile e non può essere assegnato.");
+                }
+
+                idIndex++;
             }
         }
 

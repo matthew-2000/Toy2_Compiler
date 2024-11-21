@@ -16,7 +16,7 @@ public class Main {
 
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test1.txt";
+        String filePath = "test/test7.txt";
 
         try {
             // Creazione del lexer
@@ -67,7 +67,7 @@ public class Main {
 
             // Salva il codice generato su un file
             saveGeneratedCodeToFile("output.c", generatedCode);
-            System.out.println("\nIl codice generato è stato salvato in 'output.c'");
+            System.out.println("Il codice generato è stato salvato in 'output.c'");
 
         } catch (FileNotFoundException e) {
             System.err.println("Errore: il file " + filePath + " non è stato trovato.");

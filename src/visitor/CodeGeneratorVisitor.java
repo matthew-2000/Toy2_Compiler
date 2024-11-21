@@ -14,6 +14,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     private int tempVarCounter = 0;
     private List<String> functionPrototypes = new ArrayList<>();
     private List<DeclNode> globalDeclarations = new ArrayList<>();
+    private Deque<FunctionNode> functionStack = new ArrayDeque<>();
 
     public CodeGeneratorVisitor() {
         this.code = new StringBuilder();
@@ -150,12 +151,28 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private String generateFunctionPrototype(FunctionNode node) throws SemanticException {
-        // Function signature
-        String returnType = mapType(node.getReturnTypes().get(0)); // Assuming single return type
+        String returnType;
         String paramsCode = "";
         if (node.getParams() != null) {
             paramsCode = getParamsCode(node.getParams());
         }
+
+        if (node.getReturnTypes().size() == 1) {
+            // Funzione che restituisce un solo valore
+            returnType = mapType(node.getReturnTypes().get(0));
+        } else if (node.getReturnTypes().isEmpty()) {
+            // Nessun valore di ritorno (funzione di tipo void)
+            returnType = "void";
+        } else {
+            // Funzione che restituisce più valori, usiamo void e parametri out
+            returnType = "void";
+            // Aggiungiamo i parametri out per i valori di ritorno
+            for (int i = 0; i < node.getReturnTypes().size(); i++) {
+                Type retType = node.getReturnTypes().get(i);
+                paramsCode += ", " + mapType(retType) + "* out_param" + i;
+            }
+        }
+
         String prototype = returnType + " " + node.getName() + "(" + paramsCode + ")";
         return prototype;
     }
@@ -247,17 +264,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 if (node.getType() == Type.STRING) {
                     // For strings, allocate memory dynamically
                     indent();
-                    code.append("char* ").append(id).append(" = malloc(256 * sizeof(char));\n");
-                    indent();
-                    code.append("if (").append(id).append(" == NULL) {\n");
-                    increaseIndent();
-                    indent();
-                    code.append("fprintf(stderr, \"Memory allocation failed for ").append(id).append("\\n\");\n");
-                    indent();
-                    code.append("exit(1);\n");
-                    decreaseIndent();
-                    indent();
-                    code.append("}\n");
+                    code.append("char ").append(id).append("[256];\n");
                 } else {
                     indent();
                     code.append(cType).append(" ").append(id).append(";\n");
@@ -277,19 +284,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 if (constant.getType() == Type.STRING) {
                     // For string constants, allocate and initialize dynamically
                     indent();
-                    code.append("char* ").append(id).append(" = malloc(strlen(").append(constantValue).append(") + 1);\n");
-                    indent();
-                    code.append("if (").append(id).append(" == NULL) {\n");
-                    increaseIndent();
-                    indent();
-                    code.append("fprintf(stderr, \"Memory allocation failed for ").append(id).append("\\n\");\n");
-                    indent();
-                    code.append("exit(1);\n");
-                    decreaseIndent();
-                    indent();
-                    code.append("}\n");
-                    indent();
-                    code.append("strcpy(").append(id).append(", ").append(constantValue).append(");\n");
+                    code.append("char* ").append(id).append(" = ").append(constantValue).append(";\n");
                 } else {
                     indent();
                     code.append(cType).append(" ").append(id).append(" = ").append(constantValue).append(";\n");
@@ -326,10 +321,21 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     @Override
     public Object visit(FunctionNode node) throws SemanticException {
         // Function signature
-        String returnType = mapType(node.getReturnTypes().get(0)); // Assuming single return type
+        functionStack.push(node);
+        String returnType = node.getReturnTypes().size() == 1 ? mapType(node.getReturnTypes().get(0)) : "void";
         String paramsCode = "";
         if (node.getParams() != null) {
             paramsCode = getParamsCode(node.getParams());
+        }
+        // Add output parameters for multiple return values
+        if (node.getReturnTypes().size() > 1) {
+            for (int i = 0; i < node.getReturnTypes().size(); i++) {
+                Type retType = node.getReturnTypes().get(i);
+                paramsCode += ", " + mapType(retType) + "* out_param" + i;
+            }
+        } else if (node.getReturnTypes().size() == 1) {
+            // For single return value, we can decide whether to use return type or output parameter
+            // Depending on your language's semantics
         }
         indent();
         code.append(returnType).append(" ").append(node.getName()).append("(")
@@ -344,6 +350,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         decreaseIndent();
         indent();
         code.append("}\n\n");
+        functionStack.pop();
         return null; // FunctionNode does not return a value
     }
 
@@ -434,16 +441,51 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         List<ExprNode> exprs = node.getExprs();
         List<Boolean> isOutIds = node.getIsOutIds();
 
-        for (int i = 0; i < ids.size(); i++) {
-            String id = ids.get(i);
-            String exprCode = (String) exprs.get(i).accept(this);
-            indent();
-            code.append(isOutIds.get(i) ? "*" + id : id)
-                    .append(" = ")
-                    .append(exprCode)
-                    .append(";\n");
+        int idIndex = 0; // Index into ids
+
+        for (ExprNode expr : exprs) {
+            if (expr instanceof FunCallNode) {
+                FunCallNode funcCall = (FunCallNode) expr;
+                // Retrieve the return types of the function
+                List<Type> returnTypes = funcCall.getReturnTypes(); // Assume this method exists
+                int numReturns = returnTypes.size();
+                // Generate code for the function call, passing arguments and output variables
+                StringBuilder argsBuilder = new StringBuilder();
+                // Generate code for function arguments
+                List<ExprNode> args = funcCall.getArguments();
+                for (int i = 0; i < args.size(); i++) {
+                    String argCode = (String) args.get(i).accept(this);
+                    argsBuilder.append(argCode);
+                    argsBuilder.append(", ");
+                }
+
+                // Now, for the output variables, pass addresses of identifiers
+                for (int i = 0; i < numReturns; i++) {
+                    String id = ids.get(idIndex + i);
+                    argsBuilder.append("&").append(id);
+                    if (i < numReturns - 1) {
+                        argsBuilder.append(", ");
+                    }
+                }
+
+                indent();
+                code.append(funcCall.getFunctionName()).append("(").append(argsBuilder.toString()).append(");\n");
+
+                idIndex += numReturns;
+            } else {
+                String id = ids.get(idIndex);
+                String exprCode = (String) expr.accept(this);
+
+                indent();
+                code.append(isOutIds.get(idIndex) ? "*" + id : id)
+                        .append(" = ")
+                        .append(exprCode)
+                        .append(";\n");
+
+                idIndex++;
+            }
         }
-        return null; // AssignStatNode does not return a value
+        return null;
     }
 
     @Override
@@ -474,15 +516,29 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             indent();
             code.append("return;\n");
         } else {
-            StringJoiner returnJoiner = new StringJoiner(", ");
-            for (ExprNode expr : node.getExprs()) {
-                String exprCode = (String) expr.accept(this);
-                returnJoiner.add(exprCode);
+            // Otteniamo la funzione corrente per sapere se siamo in una funzione con più valori di ritorno
+            FunctionNode currentFunction = getCurrentFunction(); // Metodo per ottenere la funzione corrente
+            if (currentFunction.getReturnTypes().size() > 1) {
+                // Assegniamo le espressioni ai parametri out
+                for (int i = 0; i < node.getExprs().size(); i++) {
+                    String exprCode = (String) node.getExprs().get(i).accept(this);
+                    indent();
+                    code.append("*out_param").append(i).append(" = ").append(exprCode).append(";\n");
+                }
+                indent();
+                code.append("return;\n");
+            } else if (currentFunction.getReturnTypes().size() == 1) {
+                // Funzione con un solo valore di ritorno
+                String exprCode = (String) node.getExprs().get(0).accept(this);
+                indent();
+                code.append("return ").append(exprCode).append(";\n");
             }
-            indent();
-            code.append("return ").append(returnJoiner.toString()).append(";\n");
         }
-        return null; // ReturnStatNode does not return a value
+        return null; // ReturnStatNode non restituisce un valore
+    }
+
+    private FunctionNode getCurrentFunction() {
+        return functionStack.peek();
     }
 
     @Override
@@ -665,8 +721,22 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 argsBuilder.append(", ");
             }
         }
-        return functionName + "(" + argsBuilder.toString() + ")";
+
+        // Check if the function returns multiple values
+        List<Type> returnTypes = node.getReturnTypes(); // Assume this method exists
+        if (returnTypes.size() == 1) {
+            // Function returns a single value, we can use it in an expression
+            String tempVar = getNextTempVar();
+            indent();
+            String returnType = mapType(returnTypes.get(0));
+            code.append(returnType).append(" ").append(tempVar).append(";\n");
+            indent();
+            code.append(functionName).append("(").append(argsBuilder.toString()).append(", &").append(tempVar).append(");\n");
+            return tempVar;
+        }
+        return null;
     }
+
 
     @Override
     public Object visit(ProcCallNode node) throws SemanticException {
