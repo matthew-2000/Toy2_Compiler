@@ -15,6 +15,7 @@ import java.util.List;
 
 public class ScopeCheckingVisitor implements Visitor {
     private SymbolTableManager symbolTableManager;
+    private boolean mainProcedureDeclared = false;
 
     public ScopeCheckingVisitor(SymbolTableManager symbolTableManager) {
         this.symbolTableManager = symbolTableManager;
@@ -39,6 +40,10 @@ public class ScopeCheckingVisitor implements Visitor {
         }
         // Esci dallo scope globale
         symbolTableManager.exitScope();
+
+        if (!mainProcedureDeclared) {
+            throw new SemanticException("Non è stata dichiarata una procedura 'main'.");
+        }
 
         symbolTableManager.checkUnresolvedReferencesAtEnd();
 
@@ -181,6 +186,14 @@ public class ScopeCheckingVisitor implements Visitor {
 
     @Override
     public Void visit(ProcedureNode node) throws SemanticException {
+        // Controlla che la procedura si chiami "main"
+        if (node.getName().equals("main")) {
+            if (mainProcedureDeclared) {
+                throw new SemanticException("La procedura 'main' è già stata dichiarata.");
+            }
+            mainProcedureDeclared = true;
+        }
+
         // Aggiungi la procedura alla tabella dei simboli
         boolean success = symbolTableManager.addProcedureSymbol(
                 node.getName(),

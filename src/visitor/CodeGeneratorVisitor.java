@@ -140,6 +140,9 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 functionPrototypes.add(prototype);
             } else if (iter.getDeclaration() instanceof ProcedureNode) {
                 ProcedureNode procNode = (ProcedureNode) iter.getDeclaration();
+                if (procNode.getName().equals("main")){
+                    continue;
+                }
                 String prototype = generateProcedurePrototype(procNode);
                 functionPrototypes.add(prototype);
             }
@@ -158,6 +161,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private String generateProcedurePrototype(ProcedureNode node) throws SemanticException {
+
         String paramsCode = "";
         if (node.getParams() != null) {
             paramsCode = getProcParamsCode(node.getParams());
@@ -363,8 +367,12 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             paramsCode = getProcParamsCode(node.getParams());
         }
         indent();
-        code.append("void ").append(node.getName()).append("(")
-                .append(paramsCode).append(") {\n");
+
+        if (node.getName().equals("main")) {
+            code.append("int main() {\n");
+        } else {
+            code.append("void ").append(node.getName()).append("(").append(paramsCode).append(") {\n");
+        }
         increaseIndent();
 
         // Procedure body

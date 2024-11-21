@@ -145,6 +145,13 @@ public class TypeCheckingVisitor implements Visitor {
 
     @Override
     public Type visit(ProcedureNode node) throws SemanticException {
+        if (node.getName().equals("main")) {
+            // Controlla che la procedura main abbia determinati parametri o nessuno
+            if (node.getParams() != null && !node.getParams().getParams().isEmpty()) {
+                throw new SemanticException("La procedura 'main' non deve avere parametri.");
+            }
+        }
+
         // Ottieni i tipi dei parametri e i flag isOut per la procedura
         List<Type> paramTypes = new ArrayList<>();
         List<Boolean> isOutParams = new ArrayList<>();
