@@ -446,33 +446,43 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         for (ExprNode expr : exprs) {
             if (expr instanceof FunCallNode) {
                 FunCallNode funcCall = (FunCallNode) expr;
+
                 // Retrieve the return types of the function
                 List<Type> returnTypes = funcCall.getReturnTypes(); // Assume this method exists
                 int numReturns = returnTypes.size();
-                // Generate code for the function call, passing arguments and output variables
+
+                // Generate code for the function call
                 StringBuilder argsBuilder = new StringBuilder();
+
                 // Generate code for function arguments
                 List<ExprNode> args = funcCall.getArguments();
                 for (int i = 0; i < args.size(); i++) {
                     String argCode = (String) args.get(i).accept(this);
                     argsBuilder.append(argCode);
-                    argsBuilder.append(", ");
-                }
-
-                // Now, for the output variables, pass addresses of identifiers
-                for (int i = 0; i < numReturns; i++) {
-                    String id = ids.get(idIndex + i);
-                    argsBuilder.append("&").append(id);
-                    if (i < numReturns - 1) {
+                    if (i < args.size() - 1) {
                         argsBuilder.append(", ");
                     }
                 }
 
-                indent();
-                code.append(funcCall.getFunctionName()).append("(").append(argsBuilder.toString()).append(");\n");
-
-                idIndex += numReturns;
+                if (numReturns == 1) {
+                    // Single return: normal assignment without pointer
+                    String id = ids.get(idIndex);
+                    indent();
+                    code.append(id).append(" = ").append(funcCall.getFunctionName()).append("(")
+                            .append(argsBuilder.toString()).append(");\n");
+                    idIndex++;
+                } else {
+                    // Multiple returns: use pointers for output variables
+                    for (int i = 0; i < numReturns; i++) {
+                        String id = ids.get(idIndex + i);
+                        argsBuilder.append(", &").append(id);
+                    }
+                    indent();
+                    code.append(funcCall.getFunctionName()).append("(").append(argsBuilder.toString()).append(");\n");
+                    idIndex += numReturns;
+                }
             } else {
+                // Standard assignment for non-function call expressions
                 String id = ids.get(idIndex);
                 String exprCode = (String) expr.accept(this);
 

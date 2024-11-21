@@ -416,6 +416,7 @@ public class TypeCheckingVisitor implements Visitor {
             }
         }
 
+        node.setReturnTypes(functionSymbol.getReturnTypes());
         return functionSymbol.getReturnTypes(); // Restituisce il tipo di ritorno della funzione
     }
 

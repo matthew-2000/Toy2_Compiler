@@ -1,11 +1,10 @@
+import java.io.File;
 import java.io.FileReader;
-import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
-import java_cup.runtime.Symbol;
+
 import nodes.ProgramNode;
 import unisa.compilatori.parser;
-import unisa.compilatori.sym;
 import visitor.CodeGeneratorVisitor;
 import visitor.ScopeCheckingVisitor;
 import visitor.TypeCheckingVisitor;
@@ -15,90 +14,74 @@ import visitor.symbolTable.SymbolTableManager;
 public class Main {
 
     public static void main(String[] args) {
-        // Percorso del file di test
-        String filePath = "test/test7.txt";
-        String outputCFile = "output.c";
-        String outputExecutable = "output";
+        // Controlla che ci sia un unico parametro di input
+        if (args.length != 1) {
+            System.err.println("Errore: il programma richiede un unico parametro di input (<nome>.txt).");
+            System.exit(1);
+        }
+
+        String inputFileName = args[0];
+        if (!inputFileName.endsWith(".txt")) {
+            System.err.println("Errore: il file di input deve avere estensione .txt.");
+            System.exit(1);
+        }
+
+        File inputFile = new File(inputFileName);
+        if (!inputFile.exists() || !inputFile.isFile()) {
+            System.err.println("Errore: il file di input specificato non esiste o non è un file.");
+            System.exit(1);
+        }
+
+        // Estrai il nome del file senza estensione
+        String baseName = inputFile.getName().substring(0, inputFile.getName().lastIndexOf('.'));
+        // Cartella di output
+        File outputDir = new File(inputFile.getParent() + File.separator + "c_out");
+        if (!outputDir.exists() && !outputDir.mkdirs()) {
+            System.err.println("Errore: impossibile creare la cartella di output.");
+            System.exit(1);
+        }
+
+        // Nome del file di output .c
+        File outputFile = new File(outputDir, baseName + ".c");
 
         try {
-            // Creazione del lexer
-            FileReader fileReader = new FileReader(filePath);
+            // Parsing del file di input
+            FileReader fileReader = new FileReader(inputFile);
             Toy2Lexer lexer = new Toy2Lexer(fileReader);
-
-            // Creazione del parser con il lexer
             parser parser = new parser(lexer);
 
-            // Esecuzione del parsing
-            System.out.println("\n=== Avvio del parsing ===");
             ProgramNode programNode = (ProgramNode) parser.parse().value;
-            System.out.println("=== Parsing completato con successo! ===");
 
-            // Creazione del SymbolTableManager condiviso
-            SymbolTableManager symbolTableManager = new SymbolTableManager();
             // Scope Checking
-            System.out.println("\n=== Avvio dello scope checking ===");
+            SymbolTableManager symbolTableManager = new SymbolTableManager();
             ScopeCheckingVisitor scopeCheckingVisitor = new ScopeCheckingVisitor(symbolTableManager);
             programNode.accept(scopeCheckingVisitor);
-            System.out.println("=== Scope checking completato con successo! ===");
 
             // Type Checking
-            System.out.println("\n=== Avvio del type checking ===");
             TypeCheckingVisitor typeCheckingVisitor = new TypeCheckingVisitor(symbolTableManager);
             programNode.accept(typeCheckingVisitor);
-            System.out.println("=== Type checking completato con successo! ===");
 
             // Code Generation
-            System.out.println("\n=== Avvio della generazione del codice ===");
             CodeGeneratorVisitor codeGeneratorVisitor = new CodeGeneratorVisitor();
-            String generatedCode = (String) programNode.accept(codeGeneratorVisitor);
-            System.out.println("=== Codice generato ===");
-            System.out.println(generatedCode);
+            programNode.accept(codeGeneratorVisitor);
+            String generatedCode = codeGeneratorVisitor.getCode();
 
-            // Salva il codice generato su un file
-            saveGeneratedCodeToFile("output.c", generatedCode);
-            System.out.println("Il codice generato è stato salvato in 'output.c'");
-            // Compile and Run the C code
-            compileAndRunCCode(outputCFile, outputExecutable);
+            // Salva il codice generato nel file di output
+            try (FileWriter writer = new FileWriter(outputFile)) {
+                writer.write(generatedCode);
+            }
 
-        } catch (FileNotFoundException e) {
-            System.err.println("Errore: il file " + filePath + " non è stato trovato.");
-        } catch (IOException e) {
-            System.err.println("Errore durante la lettura del file: " + e.getMessage());
+            System.out.println("Codice generato salvato in: " + outputFile.getAbsolutePath());
+
         } catch (SemanticException e) {
             System.err.println("Errore semantico: " + e.getMessage());
-            e.printStackTrace();
-        } catch (Exception e) {
-            System.err.println("Errore durante l'analisi del file: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
-    private static void saveGeneratedCodeToFile(String filePath, String code) {
-        try (FileWriter writer = new FileWriter(filePath)) {
-            writer.write(code);
+            System.exit(1);
         } catch (IOException e) {
-            System.err.println("Errore durante il salvataggio del codice generato: " + e.getMessage());
+            System.err.println("Errore durante la lettura/scrittura dei file: " + e.getMessage());
+            System.exit(1);
+        } catch (Exception e) {
+            System.err.println("Errore durante l'elaborazione: " + e.getMessage());
+            System.exit(1);
         }
     }
-
-    private static void compileAndRunCCode(String sourceFile, String outputExecutable) {
-        try {
-            // Step 1: Compile the C code
-            Process compileProcess = new ProcessBuilder("gcc", sourceFile, "-o", outputExecutable)
-                    .inheritIO() // Redirects the output and error streams to the console
-                    .start();
-
-            // Wait for the compilation to complete
-            int compileExitCode = compileProcess.waitFor();
-            if (compileExitCode != 0) {
-                System.err.println("Errore durante la compilazione del codice C.");
-                return;
-            }
-            System.out.println("Compilazione completata con successo.");
-        } catch (IOException | InterruptedException e) {
-            System.err.println("Errore durante la compilazione o l'esecuzione del codice C: " + e.getMessage());
-            e.printStackTrace();
-        }
-    }
-
 }
