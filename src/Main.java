@@ -35,7 +35,7 @@ public class Main {
         // Estrai il nome del file senza estensione
         String baseName = inputFile.getName().substring(0, inputFile.getName().lastIndexOf('.'));
         // Cartella di output
-        File outputDir = new File(inputFile.getParent() + File.separator + "c_out");
+        File outputDir = new File("test_files" + File.separator + "c_out");
         if (!outputDir.exists() && !outputDir.mkdirs()) {
             System.err.println("Errore: impossibile creare la cartella di output.");
             System.exit(1);
