@@ -563,21 +563,17 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         List<ExprNode> exprs = node.getExprs();
         List<Boolean> isOutIds = node.getIsOutIds();
 
-        int idIndex = 0; // Index into ids
+        int idIndex = 0; // Indice per scorrere gli identificatori
 
         for (ExprNode expr : exprs) {
             if (expr instanceof FunCallNode) {
                 FunCallNode funcCall = (FunCallNode) expr;
 
-                // Retrieve the return types of the function
-                List<Type> returnTypes = funcCall.getReturnTypes(); // Assume this method exists
-                int numReturns = returnTypes.size();
-
-                // Generate code for the function call
+                String functionName = funcCall.getFunctionName();
                 StringBuilder argsBuilder = new StringBuilder();
-
-                // Generate code for function arguments
                 List<ExprNode> args = funcCall.getArguments();
+
+                // Genera il codice per gli argomenti della funzione
                 for (int i = 0; i < args.size(); i++) {
                     String argCode = (String) args.get(i).accept(this);
                     argsBuilder.append(argCode);
@@ -586,34 +582,39 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                     }
                 }
 
+                List<Type> returnTypes = funcCall.getReturnTypes(); // Assume che questo metodo esista
+                int numReturns = returnTypes.size();
+
                 if (numReturns == 1) {
-                    // Single return: normal assignment without pointer
+                    // Funzione con un solo valore di ritorno
                     String id = ids.get(idIndex);
                     indent();
-                    code.append(id).append(" = ").append(funcCall.getFunctionName()).append("(")
+                    code.append(id).append(" = ").append(functionName).append("(")
                             .append(argsBuilder.toString()).append(");\n");
                     idIndex++;
                 } else {
-                    // Multiple returns: use pointers for output variables
+                    // Funzione con più valori di ritorno
+                    // Aggiungiamo i parametri out
+                    StringBuilder funcCallCode = new StringBuilder();
+                    funcCallCode.append(functionName).append("(").append(argsBuilder.toString());
                     for (int i = 0; i < numReturns; i++) {
                         String id = ids.get(idIndex + i);
-                        argsBuilder.append(", &").append(id);
+                        funcCallCode.append(", &").append(id);
                     }
+                    funcCallCode.append(");\n");
                     indent();
-                    code.append(funcCall.getFunctionName()).append("(").append(argsBuilder.toString()).append(");\n");
+                    code.append(funcCallCode.toString());
                     idIndex += numReturns;
                 }
             } else {
-                // Standard assignment for non-function call expressions
+                // Assegnamento normale
                 String id = ids.get(idIndex);
                 String exprCode = (String) expr.accept(this);
-
                 indent();
                 code.append(isOutIds.get(idIndex) ? "*" + id : id)
                         .append(" = ")
                         .append(exprCode)
                         .append(";\n");
-
                 idIndex++;
             }
         }
@@ -846,6 +847,8 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         String functionName = node.getFunctionName();
         StringBuilder argsBuilder = new StringBuilder();
         List<ExprNode> args = node.getArguments();
+
+        // Genera il codice per gli argomenti
         for (int i = 0; i < args.size(); i++) {
             String argCode = (String) args.get(i).accept(this);
             argsBuilder.append(argCode);
@@ -854,19 +857,23 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             }
         }
 
-        // Check if the function returns multiple values
-        List<Type> returnTypes = node.getReturnTypes(); // Assume this method exists
-        if (returnTypes.size() == 1) {
-            // Function returns a single value, we can use it in an expression
-            String tempVar = getNextTempVar();
+        List<Type> returnTypes = node.getReturnTypes();
+        int numReturns = returnTypes.size();
+
+        if (numReturns == 1) {
+            // Funzione con un solo valore di ritorno
+            // Restituiamo l'espressione della chiamata alla funzione
+            return functionName + "(" + argsBuilder.toString() + ")";
+        } else if (numReturns > 1) {
+            // Funzione con più valori di ritorno non può essere usata in un'espressione
+            throw new SemanticException("La funzione '" + functionName + "' con più valori di ritorno non può essere usata in un'espressione.");
+        } else {
+            // Funzione senza valori di ritorno
+            // Generiamo il codice per la chiamata alla funzione
             indent();
-            String returnType = mapType(returnTypes.get(0));
-            code.append(returnType).append(" ").append(tempVar).append(";\n");
-            indent();
-            code.append(functionName).append("(").append(argsBuilder.toString()).append(", &").append(tempVar).append(");\n");
-            return tempVar;
+            code.append(functionName).append("(").append(argsBuilder.toString()).append(");\n");
+            return null;
         }
-        return null;
     }
 
     @Override
@@ -922,7 +929,9 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     @Override
     public Object visit(DollarExprNode node) throws SemanticException {
-        return node.getExpr().accept(this);
+        ExprNode exprNode = node.getExpr();
+        String exprCode = (String) exprNode.accept(this);
+        return exprCode;
     }
 
     @Override

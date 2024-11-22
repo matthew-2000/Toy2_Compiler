@@ -515,7 +515,7 @@ public class TypeCheckingVisitor implements Visitor {
         ExprNode exprNode = node.getExpr();
         if (exprNode instanceof FunCallNode) {
             FunCallNode funCallNode = (FunCallNode) exprNode;
-            List<Type> returnTypes = funCallNode.getReturnTypes();
+            List<Type> returnTypes = (List<Type>) funCallNode.accept(this);
             if (returnTypes == null || returnTypes.isEmpty()) {
                 Symbol symbol = currentScope.lookup(funCallNode.getFunctionName());
                 if (symbol.getReturnTypes() == null || symbol.getReturnTypes().isEmpty()) {
