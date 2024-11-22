@@ -23,22 +23,22 @@ proc main():
         <-- "Inserisci primo operando : \t" $(n1);
         <-- "Inserisci secondo operando : \t" $(n2);
         -->!;
-        -->"Il risultato è : \t" $(somma(n1,n2));
+        -->"Il risultato ï¿½ : \t" $(somma(n1,n2));
     elseif scelta = 3 then
         <-- "Inserisci primo operando : \t" $(n1);
         <-- "Inserisci secondo operando : \t" $(n2);
         -->!;
-        -->"Il risultato è : \t" $(moltiplicazione(n1,n2));
+        -->"Il risultato ï¿½ : \t" $(moltiplicazione(n1,n2));
     elseif scelta = 4 then
         <-- "Inserisci primo operando : \t" $(n1);
         <-- "Inserisci secondo operando : \t" $(n2);
         -->!;
-        -->"Il risultato è : \t" $(divisione(n1,n2));
+        -->"Il risultato ï¿½ : \t" $(divisione(n1,n2));
     elseif scelta = 5 then
         <-- "Inserisci primo operando : \t" $(n1);
         <-- "Inserisci secondo operando : \t" $(n2);
         -->!;
-        -->"Il risultato è : \t" $(sottrazione(n1,n2));
+        -->"Il risultato ï¿½ : \t" $(sottrazione(n1,n2));
     else
         condizione1 ^= false;
     endif;
@@ -71,5 +71,3 @@ func sottrazione(n1:real,n2:real)-> real:
     risultato ^= n1 - n2;
     return risultato;
 endfunc
-
-
