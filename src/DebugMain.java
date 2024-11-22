@@ -16,7 +16,7 @@ public class DebugMain {
 
     public static void main(String[] args) {
         // Percorso del file di test
-        String filePath = "test/test3.txt";
+        String filePath = "test/test11.txt";
         String outputCFile = "output.c";
         String outputExecutable = "output";
 

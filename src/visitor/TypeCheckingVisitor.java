@@ -287,27 +287,7 @@ public class TypeCheckingVisitor implements Visitor {
 
     @Override
     public Type visit(ProcCallStatNode node) throws SemanticException {
-        String procName = node.getProcCall().getProcedureName();
-        Symbol symbol = currentScope.lookup(procName);
-
-        if (symbol.getKind() != SymbolKind.PROCEDURE) {
-            throw new SemanticException("Procedura '" + procName + "' errore.");
-        }
-
-        // Verifica i parametri
-        List<Type> paramTypes = symbol.getParamTypes();
-        List<ProcExprNode> args = node.getProcCall().getArguments();
-        if (paramTypes.size() != args.size()) {
-            throw new SemanticException("Numero di argomenti errato nella chiamata alla procedura '" + procName + "'.");
-        }
-
-        for (int i = 0; i < args.size(); i++) {
-            Type argType = (Type) args.get(i).accept(this);
-            if (argType != paramTypes.get(i)) {
-                throw new SemanticException("Tipo dell'argomento " + (i + 1) + " non compatibile nella chiamata a '" + procName + "'.");
-            }
-        }
-        return null;
+        return (Type) node.getProcCall().accept(this);
     }
 
     @Override
