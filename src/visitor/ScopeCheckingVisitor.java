@@ -91,6 +91,18 @@ public class ScopeCheckingVisitor implements Visitor {
         List<String> ids = node.getIds();
         List<ConstNode> consts = node.getConsts();
 
+        // Gestione delle costanti (assegnazione)
+        if (consts != null) {
+            // Verifica che il numero di costanti corrisponda al numero di identificatori
+            if (consts.size() != ids.size()) {
+                throw new SemanticException("Il numero di costanti non corrisponde al numero di variabili dichiarate.");
+            }
+            // Visita le costanti
+            for (ConstNode constNode : consts) {
+                constNode.accept(this);
+            }
+        }
+
         // Dichiarazione delle variabili
         for (int i = 0; i < ids.size(); i++) {
             // Verifica se la variabile è già dichiarata nello scope corrente
@@ -102,18 +114,6 @@ public class ScopeCheckingVisitor implements Visitor {
             boolean success = symbolTableManager.addSymbol(id, type != null ? type : Type.UNKNOWN, SymbolKind.VARIABLE);
             if (!success) {
                 throw new SemanticException("Variabile '" + id + "' già dichiarata nello scope corrente.");
-            }
-        }
-
-        // Gestione delle costanti (assegnazione)
-        if (consts != null) {
-            // Verifica che il numero di costanti corrisponda al numero di identificatori
-            if (consts.size() != ids.size()) {
-                throw new SemanticException("Il numero di costanti non corrisponde al numero di variabili dichiarate.");
-            }
-            // Visita le costanti
-            for (ConstNode constNode : consts) {
-                constNode.accept(this);
             }
         }
 
