@@ -177,7 +177,6 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         }
     }
 
-
     private void collectFunctionPrototypes(ItersWithoutProcedureNode node) throws SemanticException {
         for (IterWithoutProcedureNode iter : node.getIterList()) {
             if (iter.getDeclaration() instanceof FunctionNode) {
@@ -200,7 +199,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 functionPrototypes.add(prototype);
             } else if (iter.getDeclaration() instanceof ProcedureNode) {
                 ProcedureNode procNode = (ProcedureNode) iter.getDeclaration();
-                if (procNode.getName().equals("main")){
+                if (procNode.getName().equals("main")) {
                     continue;
                 }
                 String prototype = generateProcedurePrototype(procNode);
@@ -237,7 +236,6 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private String generateProcedurePrototype(ProcedureNode node) throws SemanticException {
-
         String paramsCode = "";
         if (node.getParams() != null) {
             paramsCode = getProcParamsCode(node.getParams());
@@ -650,7 +648,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             code.append("return;\n");
         } else {
             // Otteniamo la funzione corrente per sapere se siamo in una funzione con più valori di ritorno
-            FunctionNode currentFunction = getCurrentFunction(); // Metodo per ottenere la funzione corrente
+            FunctionNode currentFunction = getCurrentFunction();
             if (currentFunction.getReturnTypes().size() > 1) {
                 // Assegniamo le espressioni ai parametri out
                 for (int i = 0; i < node.getExprs().size(); i++) {
@@ -667,7 +665,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 code.append("return ").append(exprCode).append(";\n");
             }
         }
-        return null; // ReturnStatNode non restituisce un valore
+        return null;
     }
 
     private FunctionNode getCurrentFunction() {
@@ -695,13 +693,28 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 // Aggiungi la stringa letterale al formato
                 String str = ((IOArgStringLiteralNode) arg).getValue();
                 formatBuilder.append(str.replace("\"", "\\\"")); // Escape per le virgolette
+            } else if (arg instanceof DollarExprNode) {
+                // Gestione dell'espressione racchiusa in $(...)
+                DollarExprNode dollarExpr = (DollarExprNode) arg;
+                ExprNode expr = dollarExpr.getExpr();
+                if (expr instanceof FunCallNode) {
+                    Type exprType = ((FunCallNode) expr).getReturnTypes().get(0);
+                    String formatSpecifier = getFormatSpecifier(exprType);
+                    formatBuilder.append(formatSpecifier);
+                    String argCode = (String) expr.accept(this);
+                    argCodes.add(argCode);
+                } else {
+                    Type exprType = expr.getType();
+                    String formatSpecifier = getFormatSpecifier(exprType);
+                    formatBuilder.append(formatSpecifier);
+                    String argCode = (String) expr.accept(this);
+                    argCodes.add(argCode);
+                }
             } else {
-                // Determina lo specificatore di formato in base al tipo
+                // Altri tipi di argomenti
                 Type argType = getTypeOfIOArgNode(arg);
                 String formatSpecifier = getFormatSpecifier(argType);
                 formatBuilder.append(formatSpecifier);
-
-                // Genera il codice per l'argomento
                 String argCode = (String) arg.accept(this);
                 argCodes.add(argCode);
             }
@@ -715,8 +728,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         indent();
         code.append("printf(\"").append(formatBuilder).append("\"");
         if (!argCodes.isEmpty()) {
-            code.append(", ");
-            code.append(String.join(", ", argCodes));
+            code.append(", ").append(String.join(", ", argCodes));
         }
         code.append(");\n");
     }
@@ -729,13 +741,14 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 indent();
                 String prompt = ((IOArgStringLiteralNode) arg).getValue().replace("\"", "\\\"");
                 code.append("printf(\"").append(prompt).append("\");\n");
-            } else {
-                // Altrimenti, leggi l'input nella variabile
-                indent();
-                String argName = (String) arg.accept(this);
-                Type argType = getTypeOfIOArgNode(arg);
+            } else if (arg instanceof DollarExprNode) {
+                // Leggi l'input nella variabile
+                ExprNode exprNode = ((DollarExprNode) arg).getExpr();
+                String argName = (String) exprNode.accept(this);
+                Type argType = exprNode.getType();
                 String formatSpecifier = getInputFormatSpecifier(argType);
 
+                indent();
                 if (argType == Type.STRING) {
                     // Per le stringhe, non serve &
                     code.append("scanf(\"").append(formatSpecifier).append("\", ").append(argName).append(");\n");
@@ -753,7 +766,6 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             // Recupera il tipo dall'identifier
             return ((IOArgIdentifierNode) arg).getType();
         } else if (arg instanceof IOArgBinaryNode) {
-            // Supponendo che IOArgBinaryNode abbia un metodo getType()
             return ((IOArgBinaryNode) arg).getType();
         } else if (arg instanceof DollarExprNode) {
             return ((DollarExprNode) arg).getType();
@@ -793,7 +805,6 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 return "%d"; // Predefinito a %d
         }
     }
-
 
     @Override
     public Object visit(IfStatNode node) throws SemanticException {
@@ -1126,19 +1137,32 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     private String mapOperatorToC(String operator) {
         switch (operator) {
-            case "and": return "&&";
-            case "or": return "||";
-            case "not": return "!";
-            case "=": return "==";
-            case "!=": return "!=";
-            case ">": return ">";
-            case ">=": return ">=";
-            case "<": return "<";
-            case "<=": return "<=";
-            case "+": return "+";
-            case "-": return "-";
-            case "*": return "*";
-            case "/": return "/";
+            case "and":
+                return "&&";
+            case "or":
+                return "||";
+            case "not":
+                return "!";
+            case "=":
+                return "==";
+            case "!=":
+                return "!=";
+            case ">":
+                return ">";
+            case ">=":
+                return ">=";
+            case "<":
+                return "<";
+            case "<=":
+                return "<=";
+            case "+":
+                return "+";
+            case "-":
+                return "-";
+            case "*":
+                return "*";
+            case "/":
+                return "/";
             default:
                 throw new IllegalArgumentException("Unsupported operator: " + operator);
         }
