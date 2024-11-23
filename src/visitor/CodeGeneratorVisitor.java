@@ -687,28 +687,33 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private void generateWriteStat(List<IOArgNode> args, boolean appendNewline) throws SemanticException {
-        StringBuilder argsBuilder = new StringBuilder();
-        indent();
-        code.append("printf(").append("\"");
+        StringBuilder formatBuilder = new StringBuilder();
         List<String> argCodes = new ArrayList<>();
+
         for (IOArgNode arg : args) {
             if (arg instanceof IOArgStringLiteralNode) {
+                // Aggiungi la stringa letterale al formato
                 String str = ((IOArgStringLiteralNode) arg).getValue();
-                code.append(str.replace("\"", "\\\""));
+                formatBuilder.append(str.replace("\"", "\\\"")); // Escape per le virgolette
             } else {
                 // Determina lo specificatore di formato in base al tipo
                 Type argType = getTypeOfIOArgNode(arg);
                 String formatSpecifier = getFormatSpecifier(argType);
-                code.append(formatSpecifier);
+                formatBuilder.append(formatSpecifier);
+
                 // Genera il codice per l'argomento
                 String argCode = (String) arg.accept(this);
                 argCodes.add(argCode);
             }
         }
+
         if (appendNewline) {
-            code.append("\\n"); // Aggiunge il carattere di nuova linea
+            formatBuilder.append("\\n");
         }
-        code.append("\"");
+
+        // Genera la chiamata a printf
+        indent();
+        code.append("printf(\"").append(formatBuilder).append("\"");
         if (!argCodes.isEmpty()) {
             code.append(", ");
             code.append(String.join(", ", argCodes));
@@ -999,7 +1004,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private boolean isComparisonOperator(String operator) {
-        return operator.equals("==") || operator.equals("!=")
+        return operator.equals("=") || operator.equals("!=")
                 || operator.equals("<") || operator.equals(">")
                 || operator.equals("<=") || operator.equals(">=");
     }
@@ -1007,7 +1012,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     private String generateStringComparisonCode(String leftCode, String rightCode, String operator) throws SemanticException {
         String condition;
         switch (operator) {
-            case "==":
+            case "=":
                 condition = "(strcmp(" + leftCode + ", " + rightCode + ") == 0)";
                 break;
             case "!=":
@@ -1032,46 +1037,61 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private String generateConcatenationCode(String leftCode, Type leftType, String rightCode, Type rightType) throws SemanticException {
+        // Nome della variabile risultato
         String resultVar = getNextTempVar();
-        indent();
-        code.append("char ").append(resultVar).append("[1024];\n");
 
-        // Convert left operand to string
-        String leftStrVar = getNextTempVar();
+        // Stima dimensione buffer
+        int bufferSize = estimateBufferSize(leftType) + estimateBufferSize(rightType) + 1;
         indent();
-        code.append("char ").append(leftStrVar).append("[512];\n");
-        indent();
-        if (leftType == Type.STRING) {
-            code.append("strcpy(").append(leftStrVar).append(", ").append(leftCode).append(");\n");
-        } else if (leftType == Type.INTEGER) {
-            code.append("sprintf(").append(leftStrVar).append(", \"%d\", ").append(leftCode).append(");\n");
-        } else if (leftType == Type.REAL) {
-            code.append("sprintf(").append(leftStrVar).append(", \"%f\", ").append(leftCode).append(");\n");
-        } else {
-            throw new SemanticException("Unsupported type for concatenation: " + leftType);
-        }
+        code.append("char ").append(resultVar).append("[").append(bufferSize).append("];\n");
 
-        // Convert right operand to string
-        String rightStrVar = getNextTempVar();
-        indent();
-        code.append("char ").append(rightStrVar).append("[512];\n");
-        indent();
-        if (rightType == Type.STRING) {
-            code.append("strcpy(").append(rightStrVar).append(", ").append(rightCode).append(");\n");
-        } else if (rightType == Type.INTEGER) {
-            code.append("sprintf(").append(rightStrVar).append(", \"%d\", ").append(rightCode).append(");\n");
-        } else if (rightType == Type.REAL) {
-            code.append("sprintf(").append(rightStrVar).append(", \"%f\", ").append(rightCode).append(");\n");
-        } else {
-            throw new SemanticException("Unsupported type for concatenation: " + rightType);
-        }
+        // Conversione degli operandi in stringa, se necessario
+        String leftStrVar = generateStringConversion(leftCode, leftType);
+        String rightStrVar = generateStringConversion(rightCode, rightType);
 
-        // Concatenate the strings into resultVar
-        indent();
-        code.append("snprintf(").append(resultVar).append(", sizeof(").append(resultVar).append("), \"%s%s\", ").append(leftStrVar).append(", ").append(rightStrVar).append(");\n");
+        // Concatenazione delle stringhe
+        generateStringConcatenation(resultVar, leftStrVar, rightStrVar);
 
-        // Return resultVar
         return resultVar;
+    }
+
+    private int estimateBufferSize(Type type) {
+        switch (type) {
+            case STRING:
+                return 512; // Presupponendo una lunghezza massima di 512 per le stringhe
+            case INTEGER:
+                return 11; // Interi rappresentabili in base 10 con segno (max 10 cifre + terminatore)
+            case REAL:
+                return 32; // Per numeri in formato scientifico o decimale
+            default:
+                return 0;
+        }
+    }
+
+    private String generateStringConversion(String source, Type type) throws SemanticException {
+        String tempVar = getNextTempVar();
+        indent();
+        code.append("char ").append(tempVar).append("[512];\n");
+        indent();
+        switch (type) {
+            case STRING:
+                code.append("strcpy(").append(tempVar).append(", ").append(source).append(");\n");
+                break;
+            case INTEGER:
+                code.append("sprintf(").append(tempVar).append(", \"%d\", ").append(source).append(");\n");
+                break;
+            case REAL:
+                code.append("sprintf(").append(tempVar).append(", \"%f\", ").append(source).append(");\n");
+                break;
+            default:
+                throw new SemanticException("Unsupported type for conversion to string: " + type);
+        }
+        return tempVar;
+    }
+
+    private void generateStringConcatenation(String dest, String left, String right) {
+        indent();
+        code.append("snprintf(").append(dest).append(", sizeof(").append(dest).append("), \"%s%s\", ").append(left).append(", ").append(right).append(");\n");
     }
 
     @Override
@@ -1109,7 +1129,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             case "and": return "&&";
             case "or": return "||";
             case "not": return "!";
-            case "==": return "==";
+            case "=": return "==";
             case "!=": return "!=";
             case ">": return ">";
             case ">=": return ">=";

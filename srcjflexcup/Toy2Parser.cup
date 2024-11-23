@@ -706,7 +706,7 @@ Expr ::= FunCall:funCall
 :}
 | Expr:l EQ Expr:r
 {:
-    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "==");
+    RESULT = new BinaryExprNode((ExprNode) l, (ExprNode) r, "=");
 :}
 | Expr:l NE Expr:r
 {:

@@ -596,8 +596,6 @@ public class ScopeCheckingVisitor implements Visitor {
         // Visita il nodo destro
         node.getRight().accept(this);
 
-        // Ulteriori controlli sul tipo e sull'operatore possono essere aggiunti qui
-
         return null;
     }
 
@@ -605,8 +603,6 @@ public class ScopeCheckingVisitor implements Visitor {
     public Void visit(UnaryExprNode node) throws SemanticException {
         // Visita l'espressione
         node.getExpr().accept(this);
-
-        // Ulteriori controlli sull'operatore possono essere aggiunti qui
 
         return null;
     }

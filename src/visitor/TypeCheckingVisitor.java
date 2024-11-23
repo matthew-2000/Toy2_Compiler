@@ -295,11 +295,13 @@ public class TypeCheckingVisitor implements Visitor {
         List<ExprNode> exprs = node.getExprs();
         List<Type> returnTypes = new ArrayList<>();
         for (ExprNode expr : exprs) {
-            Type exprType = (Type) expr.accept(this);
-            if (exprType == Type.ERROR) {
-                throw new SemanticException("Tipo errato nell'espressione di ritorno.");
+            if (expr instanceof FunCallNode) {
+                List<Type> returnTypes1 = (List<Type>) expr.accept(this);
+                returnTypes.addAll(returnTypes1);
+            } else {
+                Type exprType = (Type) expr.accept(this);
+                returnTypes.add(exprType);
             }
-            returnTypes.add(exprType);
         }
         return returnTypes; // Non ha un tipo specifico
     }
@@ -649,7 +651,7 @@ public class TypeCheckingVisitor implements Visitor {
             case ">=":
             case "<":
             case "<=":
-            case "==":
+            case "=":
             case "!=":
                 if ((leftType == Type.INTEGER && rightType == Type.INTEGER) ||
                         (leftType == Type.REAL && rightType == Type.REAL) ||
@@ -657,9 +659,12 @@ public class TypeCheckingVisitor implements Visitor {
                         (leftType == Type.REAL && rightType == Type.INTEGER)) {
                     node.setType(Type.BOOLEAN);
                     return Type.BOOLEAN;
-                } else if (leftType == Type.STRING && rightType == Type.STRING && operator.equals("==")) {
+                } else if (leftType == Type.STRING && rightType == Type.STRING && (operator.equals("=") || operator.equals("!="))) {
                     node.setType(Type.BOOLEAN);
-                    return Type.BOOLEAN; // Comparazione tra stringhe valida solo con "=="
+                    return Type.BOOLEAN; // Comparazione tra stringhe valida solo con "="
+                }  else if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN && (operator.equals("=") || operator.equals("!="))) {
+                    node.setType(Type.BOOLEAN);
+                    return Type.BOOLEAN; // Comparazione tra booleani con "=" o "!="
                 }
                 throw new SemanticException("Operator '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
 
