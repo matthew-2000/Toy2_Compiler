@@ -1,10 +1,24 @@
-proc main(out a: integer, b: integer):
- var c : integer;\
- c ^= somma(a, b);
- -->! "La somma è: " $(c);
+proc main():
+    var a, b ^= 1, 3;\
+    if yes() then
+        a ^= a + b;
+        -->! $(a);
+    elseif yesdue() then
+        a ^= a - b;
+        -->! $(a);
+    else
+        -->! "No";
+    endif;
+
+    while yes() do
+            -->! "No";
+    endwhile;
 endproc
 
-func somma(a:integer, b:integer)-> integer:
-    return a + b;
+func yes()-> boolean:
+    return false;
 endfunc
 
+func yesdue()-> boolean:
+    return true;
+endfunc

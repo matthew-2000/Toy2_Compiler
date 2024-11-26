@@ -344,9 +344,20 @@ public class TypeCheckingVisitor implements Visitor {
 
         currentScope = symbolTableManager.getScope(node);
 
-        Type conditionType = (Type) node.getCondition().accept(this);
-        if (conditionType != Type.BOOLEAN) {
-            throw new SemanticException("La condizione dell'if deve essere di tipo boolean.");
+        if (node.getCondition() instanceof FunCallNode) {
+            FunCallNode condition = (FunCallNode) node.getCondition();
+            List<Type> returnTypes = (List<Type>) condition.accept(this);
+            if (returnTypes.size() != 1) {
+                throw new SemanticException("La chiamata a una funzione all'interno di un if deve ritornare un solo tipo.");
+            }
+            if (returnTypes.get(0) != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione IF deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
+            }
+        } else {
+            Type conditionType = (Type) node.getCondition().accept(this);
+            if (conditionType != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione IF deve essere di tipo BOOLEAN, trovato: " + conditionType);
+            }
         }
 
         node.getThenBody().accept(this);
@@ -366,9 +377,20 @@ public class TypeCheckingVisitor implements Visitor {
 
         currentScope = symbolTableManager.getScope(node);
 
-        Type conditionType = (Type) node.getCondition().accept(this);
-        if (conditionType != Type.BOOLEAN) {
-            throw new SemanticException("La condizione del while deve essere di tipo boolean.");
+        if (node.getCondition() instanceof FunCallNode) {
+            FunCallNode condition = (FunCallNode) node.getCondition();
+            List<Type> returnTypes = (List<Type>) condition.accept(this);
+            if (returnTypes.size() != 1) {
+                throw new SemanticException("La chiamata a una funzione all'interno di un WHILE deve ritornare un solo tipo.");
+            }
+            if (returnTypes.get(0) != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione WHILE deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
+            }
+        } else {
+            Type conditionType = (Type) node.getCondition().accept(this);
+            if (conditionType != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione WHILE deve essere di tipo BOOLEAN, trovato: " + conditionType);
+            }
         }
 
         node.getBody().accept(this);
@@ -440,10 +462,20 @@ public class TypeCheckingVisitor implements Visitor {
 
         currentScope = symbolTableManager.getScope(node);
 
-        // Controllo del tipo della condizione
-        Type conditionType = (Type) node.getCondition().accept(this);
-        if (conditionType != Type.BOOLEAN) {
-            throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + conditionType);
+        if (node.getCondition() instanceof FunCallNode) {
+            FunCallNode condition = (FunCallNode) node.getCondition();
+            List<Type> returnTypes = (List<Type>) condition.accept(this);
+            if (returnTypes.size() != 1) {
+                throw new SemanticException("La chiamata a una funzione all'interno di un ELIF deve ritornare un solo tipo.");
+            }
+            if (returnTypes.get(0) != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
+            }
+        } else {
+            Type conditionType = (Type) node.getCondition().accept(this);
+            if (conditionType != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + conditionType);
+            }
         }
 
         // Visita il corpo dell'ELIF
