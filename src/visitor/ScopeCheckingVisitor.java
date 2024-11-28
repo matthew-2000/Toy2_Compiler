@@ -111,7 +111,7 @@ public class ScopeCheckingVisitor implements Visitor {
             if (type == null && consts.get(i) != null) {
                 type = consts.get(i).getType();
             }
-            boolean success = symbolTableManager.addSymbol(id, type != null ? type : Type.UNKNOWN, SymbolKind.VARIABLE);
+            boolean success = symbolTableManager.addSymbol(id, type != null ? type : Type.NOTYPE, SymbolKind.VARIABLE);
             if (!success) {
                 throw new SemanticException("Variabile '" + id + "' già dichiarata nello scope corrente.");
             }

@@ -10,9 +10,9 @@ import java.util.List;
 
 public class DeclNode implements Visitable {
     private List<String> ids;
-    private Type type; // Può essere null se non specificato
+    private Type type;
     private List<Type> constsType;
-    private List<ConstNode> consts; // Può essere null se non specificato
+    private List<ConstNode> consts;
 
     public DeclNode(List<String> ids, Type type, List<ConstNode> consts) {
         this.ids = ids;
@@ -40,6 +40,10 @@ public class DeclNode implements Visitable {
 
     public List<Type> getConstsType() {
         return constsType;
+    }
+
+    public void setType(Type type) {
+        this.type = type;
     }
 
     @Override

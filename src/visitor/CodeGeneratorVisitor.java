@@ -344,10 +344,6 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 }
             }
         } else if (consts != null) {
-            // Case: declaration with constant assignments
-            if (ids.size() != consts.size()) {
-                throw new SemanticException("Number of identifiers and constants does not match.");
-            }
             for (int i = 0; i < ids.size(); i++) {
                 String id = ids.get(i);
                 ConstNode constant = consts.get(i);
@@ -385,7 +381,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             throw new SemanticException("Invalid declaration: missing type or assignment.");
         }
 
-        return null; // DeclNode does not return a value
+        return null;
     }
 
     private void checkAllocation(String id) {

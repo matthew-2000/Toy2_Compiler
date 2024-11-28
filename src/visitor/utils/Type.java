@@ -7,6 +7,5 @@ public enum Type {
     BOOLEAN,
     PROCEDURE,
     FUNCTION,
-    UNKNOWN,
-    ERROR
+    NOTYPE,
 }

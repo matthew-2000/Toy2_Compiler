@@ -17,7 +17,7 @@ public class TypeCheckingVisitor implements Visitor {
     private final SymbolTableManager symbolTableManager;
     private SymbolTable currentScope;
 
-    // Costruttore che accetta la SymbolTableManager esistente
+    // Costruttore che accetta il SymbolTableManager esistente
     public TypeCheckingVisitor(SymbolTableManager symbolTableManager) {
         this.symbolTableManager = symbolTableManager;
     }
@@ -28,17 +28,20 @@ public class TypeCheckingVisitor implements Visitor {
 
         currentScope = symbolTableManager.getScope(node);
 
+        // Visita le dichiarazioni senza procedure
         for (Visitable decl : node.getItersWithoutProcedure().getIterList()) {
             decl.accept(this);
         }
 
+        // Visita la procedura principale
         node.getProcedure().accept(this);
 
+        // Visita le restanti dichiarazioni
         for (Visitable decl : node.getIters().getIterList()) {
             decl.accept(this);
         }
 
-        return null;
+        return Type.NOTYPE;
     }
 
     @Override
@@ -46,7 +49,7 @@ public class TypeCheckingVisitor implements Visitor {
         for (IterWithoutProcedureNode iter : node.getIterList()) {
             iter.accept(this); // Visita ciascun IterWithoutProcedureNode per il controllo dei tipi
         }
-        return null; // ItersWithoutProcedure non ha un tipo di ritorno
+        return Type.NOTYPE; // ItersWithoutProcedure non ha un tipo di ritorno
     }
 
     @Override
@@ -59,7 +62,7 @@ public class TypeCheckingVisitor implements Visitor {
         for (IterNode iter : node.getIterList()) {
             iter.accept(this); // Visita ciascun IterNode per il controllo dei tipi
         }
-        return null; // Iters non ha un tipo di ritorno
+        return Type.NOTYPE; // Iters non ha un tipo di ritorno
     }
 
     @Override
@@ -72,7 +75,7 @@ public class TypeCheckingVisitor implements Visitor {
         for (DeclNode decl : node.getDecls()) {
             decl.accept(this); // Visita ogni dichiarazione contenuta nel nodo VarDeclNode
         }
-        return null; // VarDeclNode non restituisce un tipo
+        return Type.NOTYPE;
     }
 
     @Override
@@ -87,7 +90,7 @@ public class TypeCheckingVisitor implements Visitor {
                 }
             }
         }
-        return null; // DeclNode non restituisce un tipo
+        return Type.NOTYPE; // DeclNode non restituisce un tipo
     }
 
     @Override
@@ -113,7 +116,6 @@ public class TypeCheckingVisitor implements Visitor {
     public Type visit(FunctionNode node) throws SemanticException {
         // Ottiene i tipi di ritorno e i tipi dei parametri
         List<Type> returnTypes = node.getReturnTypes();
-        List<Type> paramTypes = new ArrayList<>();
 
         currentScope = symbolTableManager.getScope(node);
 
@@ -121,18 +123,19 @@ public class TypeCheckingVisitor implements Visitor {
             node.getParams().accept(this);
         }
 
-        // Visita il corpo della funzione, che deve restituire un tipo compatibile con il tipo di ritorno
-        List<Type> bodyType = (List<Type>) node.getBody().accept(this);
+        // Visita il corpo della funzione e ottiene i tipi di ritorno
+        List<Type> bodyReturnTypes = (List<Type>) node.getBody().accept(this);
 
-        if (bodyType.isEmpty()) {
-            throw new SemanticException("Nessun return nella funzione '" + node.getName() + "'.");
+        if (bodyReturnTypes.isEmpty()) {
+            throw new SemanticException("Nessun 'return' nella funzione '" + node.getName() + "'.");
         }
 
-        if (!returnTypes.equals(bodyType)) {
-            throw new SemanticException("Tipo di ritorno non compatibile nella funzione '" + node.getName() + "'. Atteso: " + returnTypes + ", trovato: " + bodyType);
+        if (!returnTypes.equals(bodyReturnTypes)) {
+            throw new SemanticException("Tipo di ritorno non compatibile nella funzione '" + node.getName() +
+                    "'. Atteso: " + returnTypes + ", trovato: " + bodyReturnTypes);
         }
 
-        return null;
+        return Type.NOTYPE;
     }
 
     @Override
@@ -155,31 +158,26 @@ public class TypeCheckingVisitor implements Visitor {
     @Override
     public Type visit(ProcedureNode node) throws SemanticException {
         if (node.getName().equals("main")) {
-            // Controlla che la procedura main abbia determinati parametri o nessuno
+            // Controlla che la procedura main non abbia parametri
             if (node.getParams() != null && !node.getParams().getParams().isEmpty()) {
                 throw new SemanticException("La procedura 'main' non deve avere parametri.");
             }
         }
 
-        // Ottieni i tipi dei parametri e i flag isOut per la procedura
-        List<Type> paramTypes = new ArrayList<>();
-        List<Boolean> isOutParams = new ArrayList<>();
-
         currentScope = symbolTableManager.getScope(node);
 
-        // Visita i parametri e raccoglie i loro tipi e flag isOut
         if (node.getParams() != null) {
             node.getParams().accept(this);
-            for (ProcParamNode param : node.getParams().getParams()) {
-                paramTypes.add(param.getType());
-                isOutParams.add(param.isOut());
-            }
         }
 
-        // Visita il corpo della procedura (non è previsto un tipo di ritorno)
-        node.getBody().accept(this);
+        // Visita il corpo della procedura
+        List<Type> bodyReturnTypes = (List<Type>) node.getBody().accept(this);
 
-        return null; // Le procedure non restituiscono un tipo direttamente
+        if (!bodyReturnTypes.isEmpty()) {
+            throw new SemanticException("La procedura '" + node.getName() + "' non deve contenere istruzioni 'return'.");
+        }
+
+        return Type.NOTYPE;
     }
 
     @Override
@@ -188,7 +186,7 @@ public class TypeCheckingVisitor implements Visitor {
         for (ProcParamNode param : node.getParams()) {
             param.accept(this);
         }
-        return null; // Non c'è un tipo di ritorno per un gruppo di parametri
+        return Type.NOTYPE;
     }
 
     @Override
@@ -198,36 +196,35 @@ public class TypeCheckingVisitor implements Visitor {
 
     @Override
     public List<Type> visit(BodyNode node) throws SemanticException {
-        // Itera attraverso ogni dichiarazione o istruzione nel corpo
-
         List<Type> returnTypes = new ArrayList<>();
+        boolean hasReturn = false;
 
         for (Visitable statement : node.getStatements()) {
-            // Se la dichiarazione è un'istruzione di ritorno
-            if (statement instanceof ReturnStatNode) {
-                // Ottieni il tipo di ritorno di questo nodo
-                Type returnType = (Type) statement.accept(this);
+            Object result = statement.accept(this);
 
-                // Se non ci sono tipi di ritorno registrati, aggiungiamo il primo
-                if (returnTypes.isEmpty()) {
-                    returnTypes.add(returnType);
-                } else {
-                    // Se ci sono già tipi registrati, verifichiamo se sono consistenti
-                    Type existingReturnType = returnTypes.get(0);
-                    if (!existingReturnType.equals(returnType)) {
-                        throw new SemanticException("Ci sono due istruzioni return che non matchano con i tipi di ritorno.");
+            // Se l'istruzione è un 'return' o contiene un 'return', elaboriamo i tipi di ritorno
+            if (result instanceof List<?>) {
+                List<Type> stmtReturnTypes = (List<Type>) result;
+
+                if (!stmtReturnTypes.isEmpty()) {
+                    if (!hasReturn) {
+                        // Primo 'return' trovato
+                        returnTypes = stmtReturnTypes;
+                        hasReturn = true;
+                    } else {
+                        // Controlliamo la consistenza dei tipi di ritorno
+                        if (!returnTypes.equals(stmtReturnTypes)) {
+                            throw new SemanticException("Tipi di ritorno incoerenti nel corpo.");
+                        }
                     }
                 }
-            } else {
-                // Se la dichiarazione non è un'istruzione di ritorno, la visitiamo comunque
-                statement.accept(this);
             }
         }
-        return returnTypes; // Il corpo non ha un tipo di ritorno specifico
+        return returnTypes; // Restituiamo i tipi di ritorno raccolti (potrebbe essere vuoto)
     }
 
     @Override
-    public Type visit(AssignStatNode node) throws SemanticException {
+    public List<Type> visit(AssignStatNode node) throws SemanticException {
         // Visita gli identificatori e le espressioni
         List<String> ids = node.getIds();
         List<ExprNode> exprs = node.getExprs();
@@ -268,7 +265,8 @@ public class TypeCheckingVisitor implements Visitor {
 
                 for (Type returnType : returnTypes) {
                     String id = ids.get(idIndex);
-                    Type idType = currentScope.lookup(id).getType();
+                    Symbol symbol = currentScope.lookup(id);
+                    Type idType = symbol.getType();
 
                     if (idType != returnType) {
                         throw new SemanticException("Tipo non compatibile per '" + id + "': atteso " + idType +
@@ -276,7 +274,6 @@ public class TypeCheckingVisitor implements Visitor {
                     }
 
                     // Controllo dell'immutabilità se l'identificatore è un parametro
-                    Symbol symbol = currentScope.lookup(id);
                     if (symbol.getKind() == SymbolKind.VARIABLE && symbol.isParameter()) {
                         throw new SemanticException("Parametro '" + id + "' è immutabile e non può essere assegnato.");
                     }
@@ -286,15 +283,15 @@ public class TypeCheckingVisitor implements Visitor {
             } else {
                 // Caso standard: espressione singola restituisce un tipo
                 String id = ids.get(idIndex);
+                Symbol symbol = currentScope.lookup(id);
                 Type exprType = (Type) expr.accept(this);
-                Type idType = currentScope.lookup(id).getType();
+                Type idType = symbol.getType();
 
                 if (idType != exprType) {
                     throw new SemanticException("Assegnazione a '" + id + "' non compatibile: " + idType + " := " + exprType);
                 }
 
                 // Controllo dell'immutabilità se l'identificatore è un parametro
-                Symbol symbol = currentScope.lookup(id);
                 if (symbol.getKind() == SymbolKind.VARIABLE && symbol.isParameter()) {
                     throw new SemanticException("Parametro '" + id + "' è immutabile e non può essere assegnato.");
                 }
@@ -303,119 +300,128 @@ public class TypeCheckingVisitor implements Visitor {
             }
         }
 
-        return Type.UNKNOWN; // L'assegnazione non ha un tipo di ritorno
+        return new ArrayList<>(); // Restituiamo una lista vuota di tipi di ritorno
     }
 
     @Override
-    public Type visit(ProcCallStatNode node) throws SemanticException {
-        return (Type) node.getProcCall().accept(this);
+    public List<Type> visit(ProcCallStatNode node) throws SemanticException {
+        node.getProcCall().accept(this);
+        return new ArrayList<>(); // Restituiamo una lista vuota di tipi di ritorno
     }
 
     @Override
     public List<Type> visit(ReturnStatNode node) throws SemanticException {
         List<ExprNode> exprs = node.getExprs();
         List<Type> returnTypes = new ArrayList<>();
+
         for (ExprNode expr : exprs) {
             if (expr instanceof FunCallNode) {
-                List<Type> returnTypes1 = (List<Type>) expr.accept(this);
-                returnTypes.addAll(returnTypes1);
+                List<Type> funReturnTypes = (List<Type>) expr.accept(this);
+                returnTypes.addAll(funReturnTypes);
             } else {
                 Type exprType = (Type) expr.accept(this);
                 returnTypes.add(exprType);
             }
         }
-        return returnTypes; // Non ha un tipo specifico
+
+        return returnTypes;
     }
 
     @Override
-    public Type visit(WriteStatNode node) throws SemanticException {
+    public List<Type> visit(WriteStatNode node) throws SemanticException {
         for (IOArgNode arg : node.getArgs()) {
-            Type argType = (Type) arg.accept(this);
-            if (argType == Type.ERROR) {
-                throw new SemanticException("Errore di tipo in 'write'.");
-            }
+            arg.accept(this);
         }
-        return null;
+        return new ArrayList<>(); // Restituiamo una lista vuota di tipi di ritorno
     }
 
     @Override
-    public Type visit(WriteReturnStatNode node) throws SemanticException {
+    public List<Type> visit(WriteReturnStatNode node) throws SemanticException {
         for (IOArgNode arg : node.getArgs()) {
-            Type argType = (Type) arg.accept(this);
-            if (argType == Type.ERROR) {
-                throw new SemanticException("Errore di tipo in 'writereturn'.");
-            }
+            arg.accept(this);
         }
-        return null;
+        return new ArrayList<>(); // Restituiamo una lista vuota di tipi di ritorno
     }
 
     @Override
-    public Type visit(ReadStatNode node) throws SemanticException {
+    public List<Type> visit(ReadStatNode node) throws SemanticException {
         for (IOArgNode arg : node.getArgs()) {
             Type argType = (Type) arg.accept(this);
             if (argType != Type.STRING && argType != Type.INTEGER && argType != Type.REAL) {
                 throw new SemanticException("Errore di tipo in 'read': tipo non valido.");
             }
         }
-        return null;
+        return new ArrayList<>(); // Restituiamo una lista vuota di tipi di ritorno
     }
 
     @Override
-    public Type visit(IfStatNode node) throws SemanticException {
-
+    public List<Type> visit(IfStatNode node) throws SemanticException {
+        // Verifica della condizione
         currentScope = symbolTableManager.getScope(node);
 
-        if (node.getCondition() instanceof FunCallNode) {
-            FunCallNode condition = (FunCallNode) node.getCondition();
-            List<Type> returnTypes = (List<Type>) condition.accept(this);
-            if (returnTypes.size() != 1) {
-                throw new SemanticException("La chiamata a una funzione all'interno di un if deve ritornare un solo tipo.");
-            }
-            if (returnTypes.get(0) != Type.BOOLEAN) {
-                throw new SemanticException("La condizione nell'istruzione IF deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
-            }
-        } else {
-            Type conditionType = (Type) node.getCondition().accept(this);
-            if (conditionType != Type.BOOLEAN) {
-                throw new SemanticException("La condizione nell'istruzione IF deve essere di tipo BOOLEAN, trovato: " + conditionType);
-            }
+        Type conditionType = (Type) node.getCondition().accept(this);
+        if (conditionType != Type.BOOLEAN) {
+            throw new SemanticException("La condizione nell'istruzione IF deve essere di tipo BOOLEAN, trovato: " + conditionType);
         }
 
-        node.getThenBody().accept(this);
+        // Blocchi 'then'
+        List<Type> thenReturnTypes = (List<Type>) node.getThenBody().accept(this);
 
+        // Blocchi 'elif'
+        List<List<Type>> elifsReturnTypes = new ArrayList<>();
         for (ElifNode elifNode : node.getElifBlocks()) {
-            elifNode.accept(this);
+            List<Type> elifReturnTypes = (List<Type>) elifNode.accept(this);
+            elifsReturnTypes.add(elifReturnTypes);
         }
 
+        // Blocco 'else'
+        List<Type> elseReturnTypes = new ArrayList<>();
         if (node.getElseBlock() != null) {
-            node.getElseBlock().accept(this);
+            elseReturnTypes = (List<Type>) node.getElseBlock().accept(this);
         }
-        return null;
+
+        // Verifica se tutti i rami hanno un 'return' con tipi coerenti
+        boolean allBranchesReturn = !thenReturnTypes.isEmpty();
+
+        for (List<Type> elifReturnType : elifsReturnTypes) {
+            if (elifReturnType.isEmpty()) {
+                allBranchesReturn = false;
+                break;
+            }
+        }
+
+        if (node.getElseBlock() != null && elseReturnTypes.isEmpty()) {
+            allBranchesReturn = false;
+        }
+
+        if (allBranchesReturn) {
+            // Controlla la coerenza dei tipi di ritorno tra tutti i rami
+            List<Type> firstReturnTypes = thenReturnTypes;
+            for (List<Type> elifReturnType : elifsReturnTypes) {
+                if (!firstReturnTypes.equals(elifReturnType)) {
+                    throw new SemanticException("Tipi di ritorno incoerenti tra i rami nell'istruzione IF.");
+                }
+            }
+            if (!firstReturnTypes.equals(elseReturnTypes)) {
+                throw new SemanticException("Tipi di ritorno incoerenti tra i rami nell'istruzione IF.");
+            }
+            return firstReturnTypes;
+        } else {
+            // Non tutti i rami hanno un 'return'
+            return new ArrayList<>(); // Lista vuota di tipi di ritorno
+        }
     }
 
     @Override
-    public Type visit(WhileStatNode node) throws SemanticException {
-
+    public List<Type> visit(WhileStatNode node) throws SemanticException {
         currentScope = symbolTableManager.getScope(node);
 
-        if (node.getCondition() instanceof FunCallNode) {
-            FunCallNode condition = (FunCallNode) node.getCondition();
-            List<Type> returnTypes = (List<Type>) condition.accept(this);
-            if (returnTypes.size() != 1) {
-                throw new SemanticException("La chiamata a una funzione all'interno di un WHILE deve ritornare un solo tipo.");
-            }
-            if (returnTypes.get(0) != Type.BOOLEAN) {
-                throw new SemanticException("La condizione nell'istruzione WHILE deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
-            }
-        } else {
-            Type conditionType = (Type) node.getCondition().accept(this);
-            if (conditionType != Type.BOOLEAN) {
-                throw new SemanticException("La condizione nell'istruzione WHILE deve essere di tipo BOOLEAN, trovato: " + conditionType);
-            }
+        Type conditionType = (Type) node.getCondition().accept(this);
+        if (conditionType != Type.BOOLEAN) {
+            throw new SemanticException("La condizione nell'istruzione WHILE deve essere di tipo BOOLEAN, trovato: " + conditionType);
         }
 
-        node.getBody().accept(this);
-        return null;
+        return (List<Type>) node.getBody().accept(this);
     }
 
     @Override
@@ -424,7 +430,7 @@ public class TypeCheckingVisitor implements Visitor {
         Symbol functionSymbol = currentScope.lookup(functionName);
 
         if (functionSymbol.getKind() != SymbolKind.FUNCTION) {
-            throw new SemanticException("Funzione '" + functionName + "' errore.");
+            throw new SemanticException("'" + functionName + "' non è una funzione.");
         }
 
         List<Type> expectedParamTypes = functionSymbol.getParamTypes();
@@ -449,9 +455,8 @@ public class TypeCheckingVisitor implements Visitor {
     public Type visit(ProcCallNode node) throws SemanticException {
         String procedureName = node.getProcedureName();
         Symbol procedureSymbol = currentScope.lookup(procedureName);
-
         if (procedureSymbol.getKind() != SymbolKind.PROCEDURE) {
-            throw new SemanticException("Procedura '" + procedureName + "' errore.");
+            throw new SemanticException("'" + procedureName + "' non è una procedura.");
         }
 
         List<Type> expectedParamTypes = procedureSymbol.getParamTypes();
@@ -463,8 +468,9 @@ public class TypeCheckingVisitor implements Visitor {
         }
 
         for (int i = 0; i < arguments.size(); i++) {
-            Type argType = (Type) arguments.get(i).getExpr().accept(this);
-            boolean isRef = arguments.get(i).isRef();
+            ProcExprNode procExprNode = arguments.get(i);
+            Type argType = (Type) procExprNode.getExpr().accept(this);
+            boolean isRef = procExprNode.isRef();
 
             if (argType != expectedParamTypes.get(i)) {
                 throw new SemanticException("Tipo dell'argomento " + (i + 1) + " non compatibile nella chiamata a '" + procedureName + "'. Atteso: " + expectedParamTypes.get(i) + ", trovato: " + argType);
@@ -475,43 +481,26 @@ public class TypeCheckingVisitor implements Visitor {
             }
         }
 
-        return null;
+        return Type.NOTYPE;
     }
 
     @Override
-    public Type visit(ElifNode node) throws SemanticException {
-
+    public List<Type> visit(ElifNode node) throws SemanticException {
         currentScope = symbolTableManager.getScope(node);
 
-        if (node.getCondition() instanceof FunCallNode) {
-            FunCallNode condition = (FunCallNode) node.getCondition();
-            List<Type> returnTypes = (List<Type>) condition.accept(this);
-            if (returnTypes.size() != 1) {
-                throw new SemanticException("La chiamata a una funzione all'interno di un ELIF deve ritornare un solo tipo.");
-            }
-            if (returnTypes.get(0) != Type.BOOLEAN) {
-                throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
-            }
-        } else {
-            Type conditionType = (Type) node.getCondition().accept(this);
-            if (conditionType != Type.BOOLEAN) {
-                throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + conditionType);
-            }
+        Type conditionType = (Type) node.getCondition().accept(this);
+        if (conditionType != Type.BOOLEAN) {
+            throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + conditionType);
         }
 
         // Visita il corpo dell'ELIF
-        node.getBody().accept(this);
-
-        return null;
+        return (List<Type>) node.getBody().accept(this);
     }
 
     @Override
-    public Type visit(ElseNode node) throws SemanticException {
+    public List<Type> visit(ElseNode node) throws SemanticException {
         currentScope = symbolTableManager.getScope(node);
-
-        // Visita il corpo dell'ELSE
-        node.getBody().accept(this);
-        return null;
+        return (List<Type>) node.getBody().accept(this);
     }
 
     @Override
@@ -554,7 +543,7 @@ public class TypeCheckingVisitor implements Visitor {
             if (returnTypes == null || returnTypes.isEmpty()) {
                 Symbol symbol = currentScope.lookup(funCallNode.getFunctionName());
                 if (symbol.getReturnTypes() == null || symbol.getReturnTypes().isEmpty()) {
-                    throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " non ha tipi di ritorno. ");
+                    throw new SemanticException("La funzione " + funCallNode.getFunctionName() + " non ha tipi di ritorno.");
                 } else {
                     node.setType(symbol.getReturnTypes().get(0));
                     return symbol.getReturnTypes().get(0);
@@ -671,13 +660,13 @@ public class TypeCheckingVisitor implements Visitor {
                     node.setType(Type.REAL);
                     return Type.REAL;
                 }
-                throw new SemanticException("Operator '+' non applicabile ai tipi " + leftType + " e " + rightType);
+                throw new SemanticException("Operatore '+' non applicabile ai tipi " + leftType + " e " + rightType);
 
             case "-":
             case "*":
             case "/":
                 if (leftType == Type.INTEGER && rightType == Type.INTEGER) {
-                    if (operator.equals("/")){
+                    if (operator.equals("/")) {
                         node.setType(Type.REAL);
                         return Type.REAL;
                     } else {
@@ -690,7 +679,7 @@ public class TypeCheckingVisitor implements Visitor {
                     node.setType(Type.REAL);
                     return Type.REAL;
                 }
-                throw new SemanticException("Operator '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
+                throw new SemanticException("Operatore '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
 
             case "and":
             case "or":
@@ -698,7 +687,7 @@ public class TypeCheckingVisitor implements Visitor {
                     node.setType(Type.BOOLEAN);
                     return Type.BOOLEAN;
                 }
-                throw new SemanticException("Operator '" + operator + "' richiede tipi BOOLEAN.");
+                throw new SemanticException("Operatore '" + operator + "' richiede tipi BOOLEAN.");
 
             case ">":
             case ">=":
@@ -714,12 +703,12 @@ public class TypeCheckingVisitor implements Visitor {
                     return Type.BOOLEAN;
                 } else if (leftType == Type.STRING && rightType == Type.STRING && (operator.equals("=") || operator.equals("!="))) {
                     node.setType(Type.BOOLEAN);
-                    return Type.BOOLEAN; // Comparazione tra stringhe valida solo con "="
-                }  else if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN && (operator.equals("=") || operator.equals("!="))) {
+                    return Type.BOOLEAN; // Comparazione tra stringhe valida solo con "=" e "!="
+                } else if (leftType == Type.BOOLEAN && rightType == Type.BOOLEAN && (operator.equals("=") || operator.equals("!="))) {
                     node.setType(Type.BOOLEAN);
                     return Type.BOOLEAN; // Comparazione tra booleani con "=" o "!="
                 }
-                throw new SemanticException("Operator '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
+                throw new SemanticException("Operatore '" + operator + "' non applicabile ai tipi " + leftType + " e " + rightType);
 
             default:
                 throw new SemanticException("Operatore non riconosciuto: " + operator);
@@ -739,20 +728,17 @@ public class TypeCheckingVisitor implements Visitor {
                     node.setType(exprType);
                     return exprType; // Ritorna lo stesso tipo (INTEGER o REAL)
                 }
-                throw new SemanticException("Operator 'uminus' applicabile solo a INTEGER o REAL.");
+                throw new SemanticException("Operatore 'uminus' applicabile solo a INTEGER o REAL.");
 
             case "not":
                 if (exprType == Type.BOOLEAN) {
                     node.setType(exprType);
                     return Type.BOOLEAN;
                 }
-                throw new SemanticException("Operator 'not' applicabile solo a BOOLEAN.");
+                throw new SemanticException("Operatore 'not' applicabile solo a BOOLEAN.");
 
             default:
                 throw new SemanticException("Operatore unario non riconosciuto: " + operator);
         }
     }
-
-
-
 }
