@@ -1,12 +1,19 @@
 proc main():
 
-    var a ^= 1;\
-    boh(@a);
-    -->$(a);
+    var a ^= 1;
+    b: integer;\
+    -->$(b);
 
 endproc
 
-proc boh(out a: integer):
+func boh(a: integer) -> integer :
     var b ^= 8;\
-    a ^= 1 + b;
-endproc
+
+    if b = 9 then
+        return 0;
+    else
+        return b;
+    endif;
+
+    return 10;
+endfunc

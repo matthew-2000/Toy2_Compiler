@@ -1058,7 +1058,8 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         // Stima dimensione buffer
         int bufferSize = estimateBufferSize(leftType) + estimateBufferSize(rightType) + 1;
         indent();
-        code.append("char ").append(resultVar).append("[").append(bufferSize).append("];\n");
+        code.append("char* ").append(resultVar).append(" = malloc(").append(bufferSize).append(");\n");
+        checkAllocation(resultVar);
 
         // Conversione degli operandi in stringa, se necessario
         String leftStrVar = generateStringConversion(leftCode, leftType);
@@ -1106,7 +1107,9 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     private void generateStringConcatenation(String dest, String left, String right) {
         indent();
-        code.append("snprintf(").append(dest).append(", sizeof(").append(dest).append("), \"%s%s\", ").append(left).append(", ").append(right).append(");\n");
+        code.append("strcpy(").append(dest).append(", ").append(left).append(");\n");
+        indent();
+        code.append("strcat(").append(dest).append(", ").append(right).append(");\n");
     }
 
     @Override
