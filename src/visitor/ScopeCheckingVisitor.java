@@ -285,8 +285,6 @@ public class ScopeCheckingVisitor implements Visitor {
             if (symbol == null) {
 //                throw new SemanticException("Variabile '" + id + "' non dichiarata.");
                 symbolTableManager.addUnresolvedReference(id);
-            } else {
-                node.setIsOutId(symbol.isOut());
             }
         }
 

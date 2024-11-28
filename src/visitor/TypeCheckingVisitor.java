@@ -263,7 +263,7 @@ public class TypeCheckingVisitor implements Visitor {
                     if (symbol.getKind() == SymbolKind.VARIABLE && symbol.isParameter()) {
                         throw new SemanticException("Parametro '" + id + "' è immutabile e non può essere assegnato.");
                     }
-
+                    node.setIsOutId(symbol.isOut());
                     idIndex++;
                 }
             } else {
@@ -281,7 +281,7 @@ public class TypeCheckingVisitor implements Visitor {
                 if (symbol.getKind() == SymbolKind.VARIABLE && symbol.isParameter()) {
                     throw new SemanticException("Parametro '" + id + "' è immutabile e non può essere assegnato.");
                 }
-
+                node.setIsOutId(symbol.isOut());
                 idIndex++;
             }
         }
