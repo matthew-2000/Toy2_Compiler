@@ -94,13 +94,17 @@ public class TypeCheckingVisitor implements Visitor {
     public Type visit(ConstNode node) throws SemanticException {
         Object value = node.getValue();
         if (value instanceof Integer) {
-            return Type.INTEGER;
+            node.setType(Type.INTEGER);
+            return node.getType();
         } else if (value instanceof Double) {
-            return Type.REAL;
+            node.setType(Type.REAL);
+            return node.getType();
         } else if (value instanceof Boolean) {
-            return Type.BOOLEAN;
+            node.setType(Type.BOOLEAN);
+            return node.getType();
         } else if (value instanceof String) {
-            return Type.STRING;
+            node.setType(Type.STRING);
+            return node.getType();
         }
         throw new SemanticException("Tipo di costante non riconosciuto per valore: " + value);
     }

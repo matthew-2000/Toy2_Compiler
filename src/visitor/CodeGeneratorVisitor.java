@@ -609,7 +609,15 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 String id = ids.get(idIndex);
                 String exprCode = (String) expr.accept(this);
                 indent();
-                code.append(isOutIds.get(idIndex) ? "*" + id : id)
+
+                boolean isOutId = false;
+                if ((isOutIds.size() > idIndex)) {
+                    if (isOutIds.get(idIndex)) {
+                        isOutId = true;
+                    }
+                }
+
+                code.append(isOutId ? "*" + id : id)
                         .append(" = ")
                         .append(exprCode)
                         .append(";\n");

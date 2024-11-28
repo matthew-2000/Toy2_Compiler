@@ -22,6 +22,10 @@ public class ConstNode implements Visitable {
         return type;
     }
 
+    public void setType(Type type) {
+        this.type = type;
+    }
+
     @Override
     public <T> T accept(Visitor<T> visitor) throws SemanticException {
         return visitor.visit(this);
