@@ -369,9 +369,8 @@ public class ScopeCheckingVisitor implements Visitor {
                     symbolTableManager.addUnresolvedReference(id);
                     // throw new SemanticException("Variabile '" + id + "' non dichiarata.");
                 }
-
-                // Ulteriori controlli possono essere aggiunti qui, ad esempio verificare che la variabile sia assegnabile
             }
+            arg.accept(this);
         }
 
         return null;

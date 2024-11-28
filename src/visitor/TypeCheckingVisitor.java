@@ -123,6 +123,11 @@ public class TypeCheckingVisitor implements Visitor {
 
         // Visita il corpo della funzione, che deve restituire un tipo compatibile con il tipo di ritorno
         List<Type> bodyType = (List<Type>) node.getBody().accept(this);
+
+        if (bodyType.isEmpty()) {
+            throw new SemanticException("Nessun return nella funzione '" + node.getName() + "'.");
+        }
+
         if (!returnTypes.equals(bodyType)) {
             throw new SemanticException("Tipo di ritorno non compatibile nella funzione '" + node.getName() + "'. Atteso: " + returnTypes + ", trovato: " + bodyType);
         }
@@ -194,19 +199,31 @@ public class TypeCheckingVisitor implements Visitor {
     @Override
     public List<Type> visit(BodyNode node) throws SemanticException {
         // Itera attraverso ogni dichiarazione o istruzione nel corpo
+
+        List<Type> returnTypes = new ArrayList<>();
+
         for (Visitable statement : node.getStatements()) {
-
+            // Se la dichiarazione è un'istruzione di ritorno
             if (statement instanceof ReturnStatNode) {
-                return (List<Type>) statement.accept(this);
-            }
+                // Ottieni il tipo di ritorno di questo nodo
+                Type returnType = (Type) statement.accept(this);
 
-            Type type = (Type) statement.accept(this); // Visita ogni dichiarazione/istruzione
-            // Controlla che ogni istruzione sia valida secondo le regole del tipo
-            if (type != null && type != Type.UNKNOWN) {
-                throw new SemanticException("Errore di tipo nel corpo della procedura/funzione.");
+                // Se non ci sono tipi di ritorno registrati, aggiungiamo il primo
+                if (returnTypes.isEmpty()) {
+                    returnTypes.add(returnType);
+                } else {
+                    // Se ci sono già tipi registrati, verifichiamo se sono consistenti
+                    Type existingReturnType = returnTypes.get(0);
+                    if (!existingReturnType.equals(returnType)) {
+                        throw new SemanticException("Ci sono due istruzioni return che non matchano con i tipi di ritorno.");
+                    }
+                }
+            } else {
+                // Se la dichiarazione non è un'istruzione di ritorno, la visitiamo comunque
+                statement.accept(this);
             }
         }
-        return null; // Il corpo non ha un tipo di ritorno specifico
+        return returnTypes; // Il corpo non ha un tipo di ritorno specifico
     }
 
     @Override
