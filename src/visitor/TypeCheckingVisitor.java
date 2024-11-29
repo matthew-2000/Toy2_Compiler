@@ -359,9 +359,20 @@ public class TypeCheckingVisitor implements Visitor {
         // Verifica della condizione
         currentScope = symbolTableManager.getScope(node);
 
-        Type conditionType = (Type) node.getCondition().accept(this);
-        if (conditionType != Type.BOOLEAN) {
-            throw new SemanticException("La condizione nell'istruzione IF deve essere di tipo BOOLEAN, trovato: " + conditionType);
+        if (node.getCondition() instanceof FunCallNode) {
+            FunCallNode condition = (FunCallNode) node.getCondition();
+            List<Type> returnTypes = (List<Type>) condition.accept(this);
+            if (returnTypes.size() != 1) {
+                throw new SemanticException("La chiamata a una funzione all'interno di un IF deve ritornare un solo tipo.");
+            }
+            if (returnTypes.get(0) != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione IF deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
+            }
+        } else {
+            Type conditionType = (Type) node.getCondition().accept(this);
+            if (conditionType != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione IF deve essere di tipo BOOLEAN, trovato: " + conditionType);
+            }
         }
 
         // Blocchi 'then'
@@ -416,9 +427,20 @@ public class TypeCheckingVisitor implements Visitor {
     public List<Type> visit(WhileStatNode node) throws SemanticException {
         currentScope = symbolTableManager.getScope(node);
 
-        Type conditionType = (Type) node.getCondition().accept(this);
-        if (conditionType != Type.BOOLEAN) {
-            throw new SemanticException("La condizione nell'istruzione WHILE deve essere di tipo BOOLEAN, trovato: " + conditionType);
+        if (node.getCondition() instanceof FunCallNode) {
+            FunCallNode condition = (FunCallNode) node.getCondition();
+            List<Type> returnTypes = (List<Type>) condition.accept(this);
+            if (returnTypes.size() != 1) {
+                throw new SemanticException("La chiamata a una funzione all'interno di un WHILE deve ritornare un solo tipo.");
+            }
+            if (returnTypes.get(0) != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione WHILE deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
+            }
+        } else {
+            Type conditionType = (Type) node.getCondition().accept(this);
+            if (conditionType != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione WHILE deve essere di tipo BOOLEAN, trovato: " + conditionType);
+            }
         }
 
         return (List<Type>) node.getBody().accept(this);
@@ -488,9 +510,20 @@ public class TypeCheckingVisitor implements Visitor {
     public List<Type> visit(ElifNode node) throws SemanticException {
         currentScope = symbolTableManager.getScope(node);
 
-        Type conditionType = (Type) node.getCondition().accept(this);
-        if (conditionType != Type.BOOLEAN) {
-            throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + conditionType);
+        if (node.getCondition() instanceof FunCallNode) {
+            FunCallNode condition = (FunCallNode) node.getCondition();
+            List<Type> returnTypes = (List<Type>) condition.accept(this);
+            if (returnTypes.size() != 1) {
+                throw new SemanticException("La chiamata a una funzione all'interno di un ELIF deve ritornare un solo tipo.");
+            }
+            if (returnTypes.get(0) != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + returnTypes.get(0));
+            }
+        } else {
+            Type conditionType = (Type) node.getCondition().accept(this);
+            if (conditionType != Type.BOOLEAN) {
+                throw new SemanticException("La condizione nell'istruzione ELIF deve essere di tipo BOOLEAN, trovato: " + conditionType);
+            }
         }
 
         // Visita il corpo dell'ELIF
@@ -718,8 +751,20 @@ public class TypeCheckingVisitor implements Visitor {
     @Override
     public Type visit(UnaryExprNode node) throws SemanticException {
         // Ottieni il tipo dell'espressione
-        Type exprType = (Type) node.getExpr().accept(this);
+        Object exprObj = node.getExpr().accept(this);
         String operator = node.getOperator();
+        Type exprType;
+
+        // Controlla se il risultato del nodo sinistro è una lista di tipi
+        if (exprObj instanceof List<?>) {
+            List<?> leftTypeList = (List<?>) exprObj;
+            if (leftTypeList.size() != 1) {
+                throw new SemanticException("Espressione restituisce più di un tipo.");
+            }
+            exprType = (Type) leftTypeList.get(0);
+        } else {
+            exprType = (Type) exprObj;
+        }
 
         // Regole di type-checking basate sull'operatore unario
         switch (operator) {

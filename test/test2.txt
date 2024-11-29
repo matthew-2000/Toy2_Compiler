@@ -1,19 +1,24 @@
 proc main():
-
-    var a ^= 1;
-    b: integer;\
-    -->$(b);
-
-endproc
-
-func boh(a: integer) -> integer :
-    var b ^= 8;\
-
-    if b = 9 then
-        return 0;
+    var a, b ^= 1, 3;\
+    if yes() then
+        a ^= a + b;
+        -->! $(a);
+    elseif yesdue() then
+        a ^= a - b;
+        -->! $(a);
     else
-        return b;
+        -->! "No";
     endif;
 
-    return 10;
+    while yes() do
+            -->! "No";
+    endwhile;
+endproc
+
+func yes()-> boolean:
+    return false;
+endfunc
+
+func yesdue()-> boolean:
+    return true;
 endfunc

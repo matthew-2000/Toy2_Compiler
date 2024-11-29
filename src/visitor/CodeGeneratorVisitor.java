@@ -981,7 +981,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     @Override
     public Object visit(BooleanConstNode node) throws SemanticException {
-        return node.getValue() ? "1" : "0"; // C uses 1 for true and 0 for false
+        return node.getValue() ? "true" : "false"; // C uses 1 for true and 0 for false
     }
 
     @Override
