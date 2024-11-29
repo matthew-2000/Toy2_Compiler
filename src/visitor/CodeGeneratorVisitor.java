@@ -26,9 +26,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     // Utility methods for indentation
     private void indent() {
-        for (int i = 0; i < indentLevel; i++) {
-            code.append("    "); // 4 spaces per indent level
-        }
+        code.append("    ".repeat(Math.max(0, indentLevel))); // 4 spaces per indent level
     }
 
     private void increaseIndent() {
@@ -161,8 +159,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     private void collectGlobalDeclarations(ItersWithoutProcedureNode node) {
         for (IterWithoutProcedureNode iter : node.getIterList()) {
-            if (iter.getDeclaration() instanceof VarDeclNode) {
-                VarDeclNode varDeclNode = (VarDeclNode) iter.getDeclaration();
+            if (iter.getDeclaration() instanceof VarDeclNode varDeclNode) {
                 globalDeclarations.addAll(varDeclNode.getDecls());
             }
         }
@@ -170,8 +167,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     private void collectGlobalDeclarations(ItersNode node) {
         for (IterNode iter : node.getIterList()) {
-            if (iter.getDeclaration() instanceof VarDeclNode) {
-                VarDeclNode varDeclNode = (VarDeclNode) iter.getDeclaration();
+            if (iter.getDeclaration() instanceof VarDeclNode varDeclNode) {
                 globalDeclarations.addAll(varDeclNode.getDecls());
             }
         }
@@ -179,12 +175,10 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     private void collectFunctionPrototypes(ItersWithoutProcedureNode node) throws SemanticException {
         for (IterWithoutProcedureNode iter : node.getIterList()) {
-            if (iter.getDeclaration() instanceof FunctionNode) {
-                FunctionNode funcNode = (FunctionNode) iter.getDeclaration();
+            if (iter.getDeclaration() instanceof FunctionNode funcNode) {
                 String prototype = generateFunctionPrototype(funcNode);
                 functionPrototypes.add(prototype);
-            } else if (iter.getDeclaration() instanceof ProcedureNode) {
-                ProcedureNode procNode = (ProcedureNode) iter.getDeclaration();
+            } else if (iter.getDeclaration() instanceof ProcedureNode procNode) {
                 String prototype = generateProcedurePrototype(procNode);
                 functionPrototypes.add(prototype);
             }
@@ -193,12 +187,10 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     private void collectFunctionPrototypes(ItersNode node) throws SemanticException {
         for (IterNode iter : node.getIterList()) {
-            if (iter.getDeclaration() instanceof FunctionNode) {
-                FunctionNode funcNode = (FunctionNode) iter.getDeclaration();
+            if (iter.getDeclaration() instanceof FunctionNode funcNode) {
                 String prototype = generateFunctionPrototype(funcNode);
                 functionPrototypes.add(prototype);
-            } else if (iter.getDeclaration() instanceof ProcedureNode) {
-                ProcedureNode procNode = (ProcedureNode) iter.getDeclaration();
+            } else if (iter.getDeclaration() instanceof ProcedureNode procNode) {
                 if (procNode.getName().equals("main")) {
                     continue;
                 }
@@ -210,9 +202,9 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
 
     private String generateFunctionPrototype(FunctionNode node) throws SemanticException {
         String returnType;
-        String paramsCode = "";
+        StringBuilder paramsCode = new StringBuilder();
         if (node.getParams() != null) {
-            paramsCode = getParamsCode(node.getParams());
+            paramsCode = new StringBuilder(getParamsCode(node.getParams()));
         }
 
         if (node.getReturnTypes().size() == 1) {
@@ -227,12 +219,11 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
             // Aggiungiamo i parametri out per i valori di ritorno
             for (int i = 0; i < node.getReturnTypes().size(); i++) {
                 Type retType = node.getReturnTypes().get(i);
-                paramsCode += ", " + mapType(retType) + "* out_param" + i;
+                paramsCode.append(", ").append(mapType(retType)).append("* out_param").append(i);
             }
         }
 
-        String prototype = returnType + " " + node.getName() + "(" + paramsCode + ")";
-        return prototype;
+        return returnType + " " + node.getName() + "(" + paramsCode + ")";
     }
 
     private String generateProcedurePrototype(ProcedureNode node) throws SemanticException {
@@ -240,8 +231,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         if (node.getParams() != null) {
             paramsCode = getProcParamsCode(node.getParams());
         }
-        String prototype = "void " + node.getName() + "(" + paramsCode + ")";
-        return prototype;
+        return "void " + node.getName() + "(" + paramsCode + ")";
     }
 
     private String getParamsCode(FuncParamsNode params) throws SemanticException {
@@ -423,20 +413,18 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         // Function signature
         functionStack.push(node);
         String returnType = node.getReturnTypes().size() == 1 ? mapType(node.getReturnTypes().get(0)) : "void";
-        String paramsCode = "";
+        StringBuilder paramsCode = new StringBuilder();
         if (node.getParams() != null) {
-            paramsCode = getParamsCode(node.getParams());
+            paramsCode = new StringBuilder(getParamsCode(node.getParams()));
         }
         // Add output parameters for multiple return values
         if (node.getReturnTypes().size() > 1) {
             for (int i = 0; i < node.getReturnTypes().size(); i++) {
                 Type retType = node.getReturnTypes().get(i);
-                paramsCode += ", " + mapType(retType) + "* out_param" + i;
+                paramsCode.append(", ").append(mapType(retType)).append("* out_param").append(i);
             }
-        } else if (node.getReturnTypes().size() == 1) {
-            // For single return value, we can decide whether to use return type or output parameter
-            // Depending on your language's semantics
         }
+
         indent();
         code.append(returnType).append(" ").append(node.getName()).append("(")
                 .append(paramsCode).append(") {\n");
@@ -530,8 +518,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         List<Visitable> otherStatements = new ArrayList<>();
 
         for (Visitable statement : statements) {
-            if (statement instanceof VarDeclNode) {
-                VarDeclNode varDeclNode = (VarDeclNode) statement;
+            if (statement instanceof VarDeclNode varDeclNode) {
                 varDeclarations.addAll(varDeclNode.getDecls());
             } else {
                 otherStatements.add(statement);
@@ -560,8 +547,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         int idIndex = 0; // Indice per scorrere gli identificatori
 
         for (ExprNode expr : exprs) {
-            if (expr instanceof FunCallNode) {
-                FunCallNode funcCall = (FunCallNode) expr;
+            if (expr instanceof FunCallNode funcCall) {
 
                 String functionName = funcCall.getFunctionName();
                 StringBuilder argsBuilder = new StringBuilder();
@@ -697,9 +683,8 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
                 // Aggiungi la stringa letterale al formato
                 String str = ((IOArgStringLiteralNode) arg).getValue();
                 formatBuilder.append(str.replace("\"", "\\\"")); // Escape per le virgolette
-            } else if (arg instanceof DollarExprNode) {
+            } else if (arg instanceof DollarExprNode dollarExpr) {
                 // Gestione dell'espressione racchiusa in $(...)
-                DollarExprNode dollarExpr = (DollarExprNode) arg;
                 ExprNode expr = dollarExpr.getExpr();
                 if (expr instanceof FunCallNode) {
                     Type exprType = ((FunCallNode) expr).getReturnTypes().get(0);
@@ -781,33 +766,23 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private String getFormatSpecifier(Type type) {
-        switch (type) {
-            case INTEGER:
-                return "%d";
-            case REAL:
-                return "%f";
-            case STRING:
-                return "%s";
-            case BOOLEAN:
-                return "%d"; // I booleani in C sono stampati come interi
-            default:
-                return "%d"; // Predefinito a %d
-        }
+        return switch (type) {
+            case INTEGER -> "%d";
+            case REAL -> "%f";
+            case STRING -> "%s";
+            case BOOLEAN -> "%d"; // I booleani in C sono stampati come interi
+            default -> "%d"; // Predefinito a %d
+        };
     }
 
     private String getInputFormatSpecifier(Type type) {
-        switch (type) {
-            case INTEGER:
-                return "%d";
-            case REAL:
-                return "%lf"; // Per leggere valori double in scanf
-            case STRING:
-                return "%s";
-            case BOOLEAN:
-                return "%d"; // Legge come intero
-            default:
-                return "%d"; // Predefinito a %d
-        }
+        return switch (type) {
+            case INTEGER -> "%d";
+            case REAL -> "%lf"; // Per leggere valori double in scanf
+            case STRING -> "%s";
+            case BOOLEAN -> "%d"; // Legge come intero
+            default -> "%d"; // Predefinito a %d
+        };
     }
 
     @Override
@@ -950,8 +925,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     @Override
     public Object visit(DollarExprNode node) throws SemanticException {
         ExprNode exprNode = node.getExpr();
-        String exprCode = (String) exprNode.accept(this);
-        return exprCode;
+        return (String) exprNode.accept(this);
     }
 
     @Override
@@ -995,8 +969,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         if (operator.equals("+")) {
             if (leftType == Type.STRING || rightType == Type.STRING) {
                 // Concatenazione di stringhe
-                String resultVar = generateConcatenationCode(leftCode, leftType, rightCode, rightType);
-                return resultVar;
+                return generateConcatenationCode(leftCode, leftType, rightCode, rightType);
             } else {
                 // Somma normale
                 return leftCode + " + " + rightCode;
@@ -1004,8 +977,7 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
         } else if (isComparisonOperator(operator)) {
             if (leftType == Type.STRING && rightType == Type.STRING) {
                 // Confronto tra stringhe
-                String comparisonCode = generateStringComparisonCode(leftCode, rightCode, operator);
-                return comparisonCode;
+                return generateStringComparisonCode(leftCode, rightCode, operator);
             } else {
                 // Confronto tra altri tipi
                 String cOperator = mapOperatorToC(operator);
@@ -1025,30 +997,16 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private String generateStringComparisonCode(String leftCode, String rightCode, String operator) throws SemanticException {
-        String condition;
-        switch (operator) {
-            case "=":
-                condition = "(strcmp(" + leftCode + ", " + rightCode + ") == 0)";
-                break;
-            case "!=":
-                condition = "(strcmp(" + leftCode + ", " + rightCode + ") != 0)";
-                break;
-            case "<":
-                condition = "(strcmp(" + leftCode + ", " + rightCode + ") < 0)";
-                break;
-            case ">":
-                condition = "(strcmp(" + leftCode + ", " + rightCode + ") > 0)";
-                break;
-            case "<=":
-                condition = "(strcmp(" + leftCode + ", " + rightCode + ") <= 0)";
-                break;
-            case ">=":
-                condition = "(strcmp(" + leftCode + ", " + rightCode + ") >= 0)";
-                break;
-            default:
-                throw new SemanticException("Operatore di confronto non supportato per le stringhe: " + operator);
-        }
-        return condition;
+        return switch (operator) {
+            case "=" -> "(strcmp(" + leftCode + ", " + rightCode + ") == 0)";
+            case "!=" -> "(strcmp(" + leftCode + ", " + rightCode + ") != 0)";
+            case "<" -> "(strcmp(" + leftCode + ", " + rightCode + ") < 0)";
+            case ">" -> "(strcmp(" + leftCode + ", " + rightCode + ") > 0)";
+            case "<=" -> "(strcmp(" + leftCode + ", " + rightCode + ") <= 0)";
+            case ">=" -> "(strcmp(" + leftCode + ", " + rightCode + ") >= 0)";
+            default ->
+                    throw new SemanticException("Operatore di confronto non supportato per le stringhe: " + operator);
+        };
     }
 
     private String generateConcatenationCode(String leftCode, Type leftType, String rightCode, Type rightType) throws SemanticException {
@@ -1072,16 +1030,12 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     }
 
     private int estimateBufferSize(Type type) {
-        switch (type) {
-            case STRING:
-                return 512; // Presupponendo una lunghezza massima di 512 per le stringhe
-            case INTEGER:
-                return 11; // Interi rappresentabili in base 10 con segno (max 10 cifre + terminatore)
-            case REAL:
-                return 32; // Per numeri in formato scientifico o decimale
-            default:
-                return 0;
-        }
+        return switch (type) {
+            case STRING -> 512; // Presupponendo una lunghezza massima di 512 per le stringhe
+            case INTEGER -> 11; // Interi rappresentabili in base 10 con segno (max 10 cifre + terminatore)
+            case REAL -> 32; // Per numeri in formato scientifico o decimale
+            default -> 0;
+        };
     }
 
     private String generateStringConversion(String source, Type type) throws SemanticException {
@@ -1116,62 +1070,40 @@ public class CodeGeneratorVisitor implements Visitor<Object> {
     public Object visit(UnaryExprNode node) throws SemanticException {
         String operator = node.getOperator();
         String expr = (String) node.getExpr().accept(this);
-        switch (operator) {
-            case "uminus":
-                return "(-" + expr + ")";
-            case "not":
-                return "(!" + expr + ")";
-            default:
-                throw new SemanticException("Unrecognized unary operator: " + operator);
-        }
+        return switch (operator) {
+            case "uminus" -> "(-" + expr + ")";
+            case "not" -> "(!" + expr + ")";
+            default -> throw new SemanticException("Unrecognized unary operator: " + operator);
+        };
     }
 
     // Helper method to map custom types to C types
     private String mapType(Type type) throws SemanticException {
-        switch (type) {
-            case INTEGER:
-                return "int";
-            case REAL:
-                return "double";
-            case STRING:
-                return "char*";
-            case BOOLEAN:
-                return "bool"; // Ensure to include <stdbool.h> in the generated code
-            default:
-                throw new SemanticException("Unsupported type: " + type);
-        }
+        return switch (type) {
+            case INTEGER -> "int";
+            case REAL -> "double";
+            case STRING -> "char*";
+            case BOOLEAN -> "bool"; // Ensure to include <stdbool.h> in the generated code
+            default -> throw new SemanticException("Unsupported type: " + type);
+        };
     }
 
     private String mapOperatorToC(String operator) {
-        switch (operator) {
-            case "and":
-                return "&&";
-            case "or":
-                return "||";
-            case "not":
-                return "!";
-            case "=":
-                return "==";
-            case "!=":
-                return "!=";
-            case ">":
-                return ">";
-            case ">=":
-                return ">=";
-            case "<":
-                return "<";
-            case "<=":
-                return "<=";
-            case "+":
-                return "+";
-            case "-":
-                return "-";
-            case "*":
-                return "*";
-            case "/":
-                return "/";
-            default:
-                throw new IllegalArgumentException("Unsupported operator: " + operator);
-        }
+        return switch (operator) {
+            case "and" -> "&&";
+            case "or" -> "||";
+            case "not" -> "!";
+            case "=" -> "==";
+            case "!=" -> "!=";
+            case ">" -> ">";
+            case ">=" -> ">=";
+            case "<" -> "<";
+            case "<=" -> "<=";
+            case "+" -> "+";
+            case "-" -> "-";
+            case "*" -> "*";
+            case "/" -> "/";
+            default -> throw new IllegalArgumentException("Unsupported operator: " + operator);
+        };
     }
 }

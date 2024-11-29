@@ -13,7 +13,7 @@ import visitor.utils.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class TypeCheckingVisitor implements Visitor {
+public class TypeCheckingVisitor implements Visitor<Object> {
     private final SymbolTableManager symbolTableManager;
     private SymbolTable currentScope;
 
@@ -234,8 +234,7 @@ public class TypeCheckingVisitor implements Visitor {
 
         // Itera su tutte le espressioni
         for (ExprNode expr : exprs) {
-            if (expr instanceof FunCallNode) {
-                FunCallNode funcCall = (FunCallNode) expr;
+            if (expr instanceof FunCallNode funcCall) {
 
                 // Ottieni i tipi restituiti dalla funzione
                 List<Type> returnTypes = (List<Type>) funcCall.accept(this);
@@ -257,8 +256,7 @@ public class TypeCheckingVisitor implements Visitor {
         // Controlla la compatibilità dei tipi per ciascun identificatore
         int idIndex = 0;
         for (ExprNode expr : exprs) {
-            if (expr instanceof FunCallNode) {
-                FunCallNode funcCall = (FunCallNode) expr;
+            if (expr instanceof FunCallNode funcCall) {
 
                 // Ottieni i tipi restituiti dalla funzione
                 List<Type> returnTypes = (List<Type>) funcCall.accept(this);
@@ -359,8 +357,7 @@ public class TypeCheckingVisitor implements Visitor {
         // Verifica della condizione
         currentScope = symbolTableManager.getScope(node);
 
-        if (node.getCondition() instanceof FunCallNode) {
-            FunCallNode condition = (FunCallNode) node.getCondition();
+        if (node.getCondition() instanceof FunCallNode condition) {
             List<Type> returnTypes = (List<Type>) condition.accept(this);
             if (returnTypes.size() != 1) {
                 throw new SemanticException("La chiamata a una funzione all'interno di un IF deve ritornare un solo tipo.");
@@ -407,16 +404,15 @@ public class TypeCheckingVisitor implements Visitor {
 
         if (allBranchesReturn) {
             // Controlla la coerenza dei tipi di ritorno tra tutti i rami
-            List<Type> firstReturnTypes = thenReturnTypes;
             for (List<Type> elifReturnType : elifsReturnTypes) {
-                if (!firstReturnTypes.equals(elifReturnType)) {
+                if (!thenReturnTypes.equals(elifReturnType)) {
                     throw new SemanticException("Tipi di ritorno incoerenti tra i rami nell'istruzione IF.");
                 }
             }
-            if (!firstReturnTypes.equals(elseReturnTypes)) {
+            if (!thenReturnTypes.equals(elseReturnTypes)) {
                 throw new SemanticException("Tipi di ritorno incoerenti tra i rami nell'istruzione IF.");
             }
-            return firstReturnTypes;
+            return thenReturnTypes;
         } else {
             // Non tutti i rami hanno un 'return'
             return new ArrayList<>(); // Lista vuota di tipi di ritorno
@@ -427,8 +423,7 @@ public class TypeCheckingVisitor implements Visitor {
     public List<Type> visit(WhileStatNode node) throws SemanticException {
         currentScope = symbolTableManager.getScope(node);
 
-        if (node.getCondition() instanceof FunCallNode) {
-            FunCallNode condition = (FunCallNode) node.getCondition();
+        if (node.getCondition() instanceof FunCallNode condition) {
             List<Type> returnTypes = (List<Type>) condition.accept(this);
             if (returnTypes.size() != 1) {
                 throw new SemanticException("La chiamata a una funzione all'interno di un WHILE deve ritornare un solo tipo.");
@@ -510,8 +505,7 @@ public class TypeCheckingVisitor implements Visitor {
     public List<Type> visit(ElifNode node) throws SemanticException {
         currentScope = symbolTableManager.getScope(node);
 
-        if (node.getCondition() instanceof FunCallNode) {
-            FunCallNode condition = (FunCallNode) node.getCondition();
+        if (node.getCondition() instanceof FunCallNode condition) {
             List<Type> returnTypes = (List<Type>) condition.accept(this);
             if (returnTypes.size() != 1) {
                 throw new SemanticException("La chiamata a una funzione all'interno di un ELIF deve ritornare un solo tipo.");
@@ -570,8 +564,7 @@ public class TypeCheckingVisitor implements Visitor {
         // Visita l'espressione contenuta e ritorna il tipo
 
         ExprNode exprNode = node.getExpr();
-        if (exprNode instanceof FunCallNode) {
-            FunCallNode funCallNode = (FunCallNode) exprNode;
+        if (exprNode instanceof FunCallNode funCallNode) {
             List<Type> returnTypes = (List<Type>) funCallNode.accept(this);
             if (returnTypes == null || returnTypes.isEmpty()) {
                 Symbol symbol = currentScope.lookup(funCallNode.getFunctionName());
@@ -628,9 +621,6 @@ public class TypeCheckingVisitor implements Visitor {
     public Type visit(IdentifierNode node) throws SemanticException {
         // Recupera il tipo dell'identificatore dalla SymbolTable
         Symbol symbol = currentScope.lookup(node.getName());
-        if (symbol == null) {
-            throw new SemanticException("Identificatore '" + node.getName() + "' non dichiarato.");
-        }
         node.setIsOutInProcedure(symbol.isOut());
         node.setType(symbol.getType());
         return symbol.getType(); // Ritorna il tipo dell'identificatore
@@ -653,8 +643,7 @@ public class TypeCheckingVisitor implements Visitor {
         Type rightType;
 
         // Controlla se il risultato del nodo sinistro è una lista di tipi
-        if (leftResult instanceof List<?>) {
-            List<?> leftTypeList = (List<?>) leftResult;
+        if (leftResult instanceof List<?> leftTypeList) {
             if (leftTypeList.size() != 1) {
                 throw new SemanticException("Espressione sinistra restituisce più di un tipo.");
             }
@@ -664,8 +653,7 @@ public class TypeCheckingVisitor implements Visitor {
         }
 
         // Controlla se il risultato del nodo destro è una lista di tipi
-        if (rightResult instanceof List<?>) {
-            List<?> rightTypeList = (List<?>) rightResult;
+        if (rightResult instanceof List<?> rightTypeList) {
             if (rightTypeList.size() != 1) {
                 throw new SemanticException("Espressione destra restituisce più di un tipo.");
             }
@@ -756,8 +744,7 @@ public class TypeCheckingVisitor implements Visitor {
         Type exprType;
 
         // Controlla se il risultato del nodo sinistro è una lista di tipi
-        if (exprObj instanceof List<?>) {
-            List<?> leftTypeList = (List<?>) exprObj;
+        if (exprObj instanceof List<?> leftTypeList) {
             if (leftTypeList.size() != 1) {
                 throw new SemanticException("Espressione restituisce più di un tipo.");
             }

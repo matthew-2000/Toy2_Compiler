@@ -13,7 +13,7 @@ import visitor.utils.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ScopeCheckingVisitor implements Visitor {
+public class ScopeCheckingVisitor implements Visitor<Object> {
     private SymbolTableManager symbolTableManager;
     private boolean mainProcedureDeclared = false;
 
@@ -108,8 +108,11 @@ public class ScopeCheckingVisitor implements Visitor {
             // Verifica se la variabile è già dichiarata nello scope corrente
             Type type = node.getType();
             String id = ids.get(i);
-            if (type == null && consts.get(i) != null) {
-                type = consts.get(i).getType();
+            if (type == null) {
+                assert consts != null;
+                if (consts.get(i) != null) {
+                    type = consts.get(i).getType();
+                }
             }
             boolean success = symbolTableManager.addSymbol(id, type != null ? type : Type.NOTYPE, SymbolKind.VARIABLE);
             if (!success) {
@@ -319,12 +322,8 @@ public class ScopeCheckingVisitor implements Visitor {
         }
 
         // Visita le espressioni e verifica i tipi
-        for (int i = 0; i < exprs.size(); i++) {
-            ExprNode expr = exprs.get(i);
+        for (ExprNode expr : exprs) {
             expr.accept(this);
-
-            // Qui potresti voler implementare un meccanismo per determinare il tipo dell'espressione
-            // e confrontarlo con returnTypes.get(i). Questo richiede un type checking più avanzato.
         }
 
         return null;
@@ -359,8 +358,7 @@ public class ScopeCheckingVisitor implements Visitor {
         List<IOArgNode> args = node.getArgs();
 
         for (IOArgNode arg : args) {
-            if (arg instanceof IOArgIdentifierNode) {
-                IOArgIdentifierNode idNode = (IOArgIdentifierNode) arg;
+            if (arg instanceof IOArgIdentifierNode idNode) {
                 String id = idNode.getIdentifier();
 
                 // Verifica che l'identificatore sia dichiarato
@@ -389,10 +387,8 @@ public class ScopeCheckingVisitor implements Visitor {
         List<ProcExprNode> args = node.getArguments();
 
         // Visita gli argomenti e verifica i tipi
-        for (int i = 0; i < args.size(); i++) {
-            ExprNode arg = args.get(i);
+        for (ExprNode arg : args) {
             arg.accept(this);
-            // Ulteriori controlli sui tipi possono essere aggiunti qui
         }
 
         return null;
@@ -468,10 +464,8 @@ public class ScopeCheckingVisitor implements Visitor {
         List<ExprNode> args = node.getArguments();
 
         // Visita gli argomenti e verifica i tipi
-        for (int i = 0; i < args.size(); i++) {
-            ExprNode arg = args.get(i);
+        for (ExprNode arg : args) {
             arg.accept(this);
-            // Ulteriori controlli sui tipi possono essere aggiunti qui
         }
 
         return null;
@@ -487,8 +481,6 @@ public class ScopeCheckingVisitor implements Visitor {
             // throw new SemanticException("Variabile '" + id + "' non dichiarata.");
             symbolTableManager.addUnresolvedReference(id);
         }
-
-        // Ulteriori controlli possono essere aggiunti qui, ad esempio verificare il tipo della variabile
 
         return null;
     }
@@ -513,8 +505,6 @@ public class ScopeCheckingVisitor implements Visitor {
             throw new SemanticException("Operatore non valido '" + operator + "' in IOArgBinaryNode.");
         }
 
-        // Ulteriori controlli possono essere aggiunti qui, ad esempio verificare che i tipi siano compatibili per l'operazione
-
         return null;
     }
 
@@ -522,8 +512,6 @@ public class ScopeCheckingVisitor implements Visitor {
     public Void visit(DollarExprNode node) throws SemanticException {
         // Visita l'espressione contenuta
         node.getExpr().accept(this);
-
-        // Ulteriori controlli possono essere aggiunti qui se necessario
 
         return null;
     }
