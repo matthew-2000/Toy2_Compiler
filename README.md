@@ -4,7 +4,7 @@
 
 ## Specifiche del Linguaggio Toy2
 
-Le specifiche del linguaggio Toy2 sono disponibili nel documento [Specifiche_Toy2.pdf](https://github.com/simonagrieco/Toy2-Compiler/blob/master/Specifiche_Toy2.pdf).  
+Le specifiche del linguaggio Toy2 sono disponibili nel documento [Specifiche_Toy2.pdf](https://github.com/matthew-2000/Toy2_Compiler/blob/main/specificheToy2/descrizione%20Toy2_2gen.pdf).  
 Contengono una descrizione dettagliata della grammatica, sintassi e funzionalità supportate dal linguaggio.
 
 ## Struttura del Progetto
